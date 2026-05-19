@@ -1,10 +1,5 @@
-import { pgTable, serial, integer, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-
-export const task = pgTable('task', {
-	id: serial('id').primaryKey(),
-	title: text('title').notNull(),
-	priority: integer('priority').notNull().default(1)
-});
+import { pgTable, boolean, integer, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import type { AppointmentStatus } from '$lib/server/appointment/status';
 
 export const appointment = pgTable('appointment', {
 	id: uuid('id').primaryKey().defaultRandom(),
@@ -12,11 +7,14 @@ export const appointment = pgTable('appointment', {
 	clientEmail: text('client_email').notNull(),
 	clientPhone: text('client_phone'),
 	startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
-	status: text('status').notNull().$type<'awaiting_payment' | 'confirmed'>(),
+	serviceName: text('service_name').notNull(),
+	isConfirmed: boolean('is_confirmed').notNull().default(true),
+	reminderSentAt: timestamp('reminder_sent_at', { withTimezone: true }),
+	status: text('status').notNull().$type<AppointmentStatus>(),
 	stripeCheckoutSessionId: text('stripe_checkout_session_id').unique(),
 	stripePaymentIntentId: text('stripe_payment_intent_id'),
-	amountCents: integer('amount_cents').notNull(),
-	currency: text('currency').notNull().default('usd'),
+	amountCents: integer('amount_cents'),
+	currency: text('currency').default('usd'),
 	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 });
 

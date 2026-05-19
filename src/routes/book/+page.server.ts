@@ -1,14 +1,14 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { eq } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
-import { env } from '$env/dynamic/private';
+import { BOOKING_SERVICES } from '$lib/booking/services';
+import { AppointmentStatus } from '$lib/server/appointment/status';
 import { bookingFormSchema, type BookingFieldErrors } from '$lib/server/booking/schema';
 import { db } from '$lib/server/db';
 import { appointment } from '$lib/server/db/schema';
-import { getStripe } from '$lib/server/stripe';
+import { sendBookingConfirmation } from '$lib/server/email';
 
 export const load: PageServerLoad = async () => {
-	return {};
+	return { services: [...BOOKING_SERVICES] };
 };
 
 export const actions: Actions = {
@@ -19,6 +19,7 @@ export const actions: Actions = {
 			clientName: formData.get('clientName'),
 			clientEmail: formData.get('clientEmail'),
 			clientPhone: typeof phoneRaw === 'string' && phoneRaw.trim() !== '' ? phoneRaw : undefined,
+			serviceName: formData.get('serviceName'),
 			startsAt: formData.get('startsAt')
 		});
 
@@ -27,7 +28,7 @@ export const actions: Actions = {
 			return fail(400, { fieldErrors, message: 'Please fix the form.' });
 		}
 
-		const { clientName, clientEmail, clientPhone, startsAt } = parsed.data;
+		const { clientName, clientEmail, clientPhone, serviceName, startsAt } = parsed.data;
 		const startsAtDate = new Date(startsAt);
 		if (Number.isNaN(startsAtDate.getTime())) {
 			return fail(400, { message: 'Invalid date.', fieldErrors: {} as BookingFieldErrors });
@@ -39,34 +40,6 @@ export const actions: Actions = {
 			});
 		}
 
-		const origin = env.ORIGIN?.replace(/\/$/, '');
-		const priceId = env.STRIPE_APPOINTMENT_PRICE_ID;
-		if (!origin || !priceId) {
-			console.error('Missing ORIGIN or STRIPE_APPOINTMENT_PRICE_ID');
-			return fail(500, { message: 'Server misconfigured.', fieldErrors: {} as BookingFieldErrors });
-		}
-
-		const stripe = getStripe();
-		let price: Awaited<ReturnType<typeof stripe.prices.retrieve>>;
-		try {
-			price = await stripe.prices.retrieve(priceId);
-		} catch (e) {
-			console.error(e);
-			return fail(500, {
-				message: 'Could not load pricing.',
-				fieldErrors: {} as BookingFieldErrors
-			});
-		}
-
-		const unitAmount = price.unit_amount;
-		const currency = (price.currency || 'usd').toLowerCase();
-		if (unitAmount == null) {
-			return fail(500, {
-				message: 'Invalid price configuration.',
-				fieldErrors: {} as BookingFieldErrors
-			});
-		}
-
 		const [inserted] = await db
 			.insert(appointment)
 			.values({
@@ -74,9 +47,10 @@ export const actions: Actions = {
 				clientEmail,
 				clientPhone: clientPhone ?? null,
 				startsAt: startsAtDate,
-				status: 'awaiting_payment',
-				amountCents: unitAmount,
-				currency
+				serviceName,
+				isConfirmed: true,
+				reminderSentAt: null,
+				status: AppointmentStatus.Upcoming
 			})
 			.returning();
 
@@ -87,35 +61,16 @@ export const actions: Actions = {
 			});
 		}
 
-		let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>>;
 		try {
-			session = await stripe.checkout.sessions.create({
-				mode: 'payment',
-				customer_email: clientEmail,
-				line_items: [{ price: priceId, quantity: 1 }],
-				success_url: `${origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
-				cancel_url: `${origin}/book`,
-				metadata: { appointmentId: inserted.id }
+			await sendBookingConfirmation({
+				to: clientEmail,
+				clientName,
+				startsAt: startsAtDate
 			});
-		} catch (e) {
-			console.error(e);
-			await db.delete(appointment).where(eq(appointment.id, inserted.id));
-			return fail(500, {
-				message: 'Could not start checkout. Try again.',
-				fieldErrors: {} as BookingFieldErrors
-			});
+		} catch (err) {
+			console.error('Confirmation email failed', err);
 		}
 
-		if (!session.url) {
-			await db.delete(appointment).where(eq(appointment.id, inserted.id));
-			return fail(500, { message: 'Checkout URL missing.', fieldErrors: {} as BookingFieldErrors });
-		}
-
-		await db
-			.update(appointment)
-			.set({ stripeCheckoutSessionId: session.id })
-			.where(eq(appointment.id, inserted.id));
-
-		throw redirect(303, session.url);
+		throw redirect(303, `/book/success?id=${inserted.id}`);
 	}
 };

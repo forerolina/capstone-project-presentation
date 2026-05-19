@@ -1,56 +1,40 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import type { PageData } from './$types';
+	import WeekCalendar from '$lib/components/WeekCalendar.svelte';
+	import { formatWeekLabel } from '$lib/calendar/week';
+	import type { ActionData, PageData } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	function asDate(value: Date | string): Date {
-		return value instanceof Date ? value : new Date(value);
-	}
-
-	function formatWhen(value: Date | string) {
-		return asDate(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-	}
-
-	function formatMoney(cents: number, currency: string) {
-		return new Intl.NumberFormat(undefined, {
-			style: 'currency',
-			currency: currency.toUpperCase()
-		}).format(cents / 100);
-	}
+	const weekMonday = $derived(new Date(data.weekStart));
+	const weekLabel = $derived(formatWeekLabel(weekMonday));
 </script>
 
-<h1>Appointments</h1>
-<p>Signed in. <a href={resolve('/')}>Home</a></p>
+<main class="page page--wide">
+	<header class="page-header">
+		<h1>Dashboard</h1>
+		<p>Week view · <a href={resolve('/')}>Back to home</a></p>
+	</header>
 
-{#if data.appointments.length === 0}
-	<p>No confirmed appointments yet.</p>
-{:else}
-	<table border="1" cellpadding="6" cellspacing="0">
-		<thead>
-			<tr>
-				<th>When</th>
-				<th>Client</th>
-				<th>Email</th>
-				<th>Phone</th>
-				<th>Amount</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each data.appointments as a (a.id)}
-				<tr>
-					<td>{formatWhen(a.startsAt)}</td>
-					<td>{a.clientName}</td>
-					<td>{a.clientEmail}</td>
-					<td>{a.clientPhone ?? '—'}</td>
-					<td>{formatMoney(a.amountCents, a.currency)}</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
-{/if}
+	<nav class="calendar-nav" aria-label="Week navigation">
+		<a href="{resolve('/dashboard')}?week={data.prevWeek}">← Previous week</a>
+		<span class="calendar-nav-label">{weekLabel}</span>
+		<a href="{resolve('/dashboard')}?week={data.nextWeek}">Next week →</a>
+		<a href="{resolve('/dashboard')}?week={data.currentWeek}" class="calendar-nav-today">Today</a>
+	</nav>
 
-<form method="post" action="?/signOut" use:enhance>
-	<button type="submit">Sign out</button>
-</form>
+	<section class="section" aria-labelledby="calendar-heading">
+		<h2 id="calendar-heading" class="section-title">Appointments</h2>
+		<WeekCalendar
+			weekDays={data.weekDays}
+			appointments={data.appointments}
+			week={data.weekParam}
+			{form}
+		/>
+	</section>
+
+	<form method="post" action="?/signOut" use:enhance>
+		<button type="submit">Sign out</button>
+	</form>
+</main>

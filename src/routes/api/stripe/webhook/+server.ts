@@ -2,6 +2,7 @@ import type { RequestHandler } from '@sveltejs/kit';
 import Stripe from 'stripe';
 import { eq } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
+import { AppointmentStatus } from '$lib/server/appointment/status';
 import { sendBookingConfirmation } from '$lib/server/email';
 import { db } from '$lib/server/db';
 import { appointment } from '$lib/server/db/schema';
@@ -11,6 +12,7 @@ export const config = {
 	csrf: { checkOrigin: false }
 };
 
+/** Optional: handles Stripe Checkout if you add paid bookings later. */
 export const POST: RequestHandler = async ({ request }) => {
 	const secret = env.STRIPE_WEBHOOK_SECRET;
 	if (!secret) {
@@ -52,20 +54,21 @@ export const POST: RequestHandler = async ({ request }) => {
 		return new Response('OK', { status: 200 });
 	}
 
-	if (row.status === 'confirmed') {
-		return new Response('OK', { status: 200 });
-	}
-
 	const paymentIntentId =
 		typeof session.payment_intent === 'string'
 			? session.payment_intent
 			: (session.payment_intent?.id ?? null);
 
+	const amountTotal = session.amount_total;
+
 	await db
 		.update(appointment)
 		.set({
-			status: 'confirmed',
-			stripePaymentIntentId: paymentIntentId
+			status: AppointmentStatus.Upcoming,
+			stripePaymentIntentId: paymentIntentId,
+			...(amountTotal != null && session.currency
+				? { amountCents: amountTotal, currency: session.currency.toLowerCase() }
+				: {})
 		})
 		.where(eq(appointment.id, row.id));
 
@@ -73,9 +76,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		await sendBookingConfirmation({
 			to: row.clientEmail,
 			clientName: row.clientName,
-			startsAt: row.startsAt,
-			amountCents: row.amountCents,
-			currency: row.currency
+			startsAt: row.startsAt
 		});
 	} catch (err) {
 		console.error('Confirmation email failed', err);

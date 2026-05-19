@@ -4,8 +4,10 @@ export interface SendBookingConfirmationParams {
 	to: string;
 	clientName: string;
 	startsAt: Date;
-	amountCents: number;
-	currency: string;
+}
+
+function formatWhen(startsAt: Date): string {
+	return startsAt.toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' });
 }
 
 export async function sendBookingConfirmation(
@@ -14,14 +16,28 @@ export async function sendBookingConfirmation(
 	const key = env.RESEND_API_KEY;
 	const from = env.RESEND_FROM;
 	const businessName = env.BUSINESS_NAME ?? 'Our business';
+	const prepNotes = env.APPOINTMENT_PREP_NOTES?.trim();
 
 	if (!key || !from) {
 		console.warn('RESEND_API_KEY or RESEND_FROM not set; skipping confirmation email');
 		return;
 	}
 
-	const amount = (params.amountCents / 100).toFixed(2);
-	const when = params.startsAt.toISOString();
+	const when = formatWhen(params.startsAt);
+
+	const lines = [
+		`Hi ${params.clientName},`,
+		'',
+		`Your appointment with ${businessName} is confirmed.`,
+		'',
+		`When: ${when}`
+	];
+
+	if (prepNotes) {
+		lines.push('', 'Before your visit:', prepNotes);
+	}
+
+	lines.push('', 'Thank you,', businessName);
 
 	const res = await fetch('https://api.resend.com/emails', {
 		method: 'POST',
@@ -33,7 +49,7 @@ export async function sendBookingConfirmation(
 			from,
 			to: params.to,
 			subject: `Appointment confirmed — ${businessName}`,
-			text: `Hi ${params.clientName},\n\nYour appointment is confirmed for ${when}.\nAmount paid: ${params.currency.toUpperCase()} ${amount}.\n\nThank you,\n${businessName}`
+			text: lines.join('\n')
 		})
 	});
 
