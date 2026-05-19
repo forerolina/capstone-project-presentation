@@ -103,7 +103,7 @@ export const actions: Actions = {
 				clientPhone: clientPhone ?? null,
 				startsAt: startsAtDate,
 				serviceName,
-				isConfirmed: true,
+				isConfirmed: false,
 				reminderSentAt: null,
 				status: AppointmentStatus.Upcoming
 			})

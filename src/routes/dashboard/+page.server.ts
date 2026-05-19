@@ -11,6 +11,7 @@ import {
 	getWeekRange,
 	parseWeekParam
 } from '$lib/calendar/week';
+import { canSendAppointmentReminder } from '$lib/appointment/display-status';
 import { isSlotAvailable } from '$lib/server/appointment/slots';
 import { AppointmentStatus } from '$lib/server/appointment/status';
 import { auth } from '$lib/server/auth';
@@ -21,6 +22,7 @@ import {
 import { getBusinessTimezone } from '$lib/server/calendar/timezone';
 import { db } from '$lib/server/db';
 import { appointment } from '$lib/server/db/schema';
+import { getConfirmUrl } from '$lib/server/appointment/confirm-token';
 import { sendAppointmentReminder, sendBookingConfirmation } from '$lib/server/email';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -252,7 +254,7 @@ export const actions: Actions = {
 				clientPhone: clientPhone ?? null,
 				startsAt: startsAtDate,
 				serviceName,
-				isConfirmed: true,
+				isConfirmed: false,
 				reminderSentAt: null,
 				status: AppointmentStatus.Upcoming
 			})
@@ -309,10 +311,17 @@ export const actions: Actions = {
 			throw redirect(303, `/dashboard?week=${week}`);
 		}
 
+		if (!canSendAppointmentReminder(row)) {
+			return fail(400, {
+				message: 'Reminders can only be sent when the appointment status is Send reminder.'
+			});
+		}
+
 		await sendAppointmentReminder({
 			to: row.clientEmail,
 			clientName: row.clientName,
-			startsAt: row.startsAt
+			startsAt: row.startsAt,
+			confirmUrl: getConfirmUrl(row.id, url.origin)
 		});
 
 		await db

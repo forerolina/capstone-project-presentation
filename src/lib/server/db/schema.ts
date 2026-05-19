@@ -8,7 +8,7 @@ export const appointment = pgTable('appointment', {
 	clientPhone: text('client_phone'),
 	startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
 	serviceName: text('service_name').notNull(),
-	isConfirmed: boolean('is_confirmed').notNull().default(true),
+	isConfirmed: boolean('is_confirmed').notNull().default(false),
 	reminderSentAt: timestamp('reminder_sent_at', { withTimezone: true }),
 	status: text('status').notNull().$type<AppointmentStatus>(),
 	stripeCheckoutSessionId: text('stripe_checkout_session_id').unique(),

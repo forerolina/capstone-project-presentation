@@ -376,6 +376,25 @@ button[type='submit']:hover {
 	background: #333;
 }
 
+button:disabled,
+button[disabled] {
+	opacity: 0.5;
+	cursor: not-allowed;
+	pointer-events: none;
+}
+
+button[type='submit']:disabled,
+button[type='submit'][disabled] {
+	background: #9ca3af;
+	border-color: #9ca3af;
+	color: #fff;
+}
+
+button[type='submit']:disabled:hover,
+button[type='submit'][disabled]:hover {
+	background: #9ca3af;
+}
+
 button.secondary[type='submit'] {
 	background: #fff;
 	color: #111;
@@ -609,6 +628,11 @@ th {
 	font-weight: 600;
 	white-space: nowrap;
 	line-height: 1.4;
+}
+
+.status-pill--scheduled {
+	background: #e2e8f0;
+	color: #475569;
 }
 
 .status-pill--confirmed {
@@ -929,14 +953,17 @@ th {
 	margin: 0.15rem 0 0;
 }
 
-.manage-client-status {
-	margin: 0 0 1rem;
+.manage-client-details .status-pill--modal {
+	font-size: 0.8125rem;
+	padding: 0.2rem 0.625rem;
+	line-height: 1.35;
 }
 
 .manage-client-actions {
 	margin-bottom: 0.75rem;
 }
 
+.manage-client-actions form,
 .manage-client-actions .button {
 	width: 100%;
 }

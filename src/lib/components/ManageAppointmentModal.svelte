@@ -12,6 +12,7 @@
 		type DateKey
 	} from '$lib/calendar/datetime';
 	import { weekdayFromDateKey } from '$lib/calendar/week';
+	import { getAppointmentDisplayStatus } from '$lib/appointment/display-status';
 	import type { AppointmentRow } from '$lib/components/AppointmentCard.svelte';
 
 	const MS_PER_HOUR = 60 * 60 * 1000;
@@ -22,8 +23,6 @@
 		message?: string;
 		appointmentId?: string | null;
 	} | null;
-
-	type PillVariant = 'confirmed' | 'pending' | 'reminder' | 'cancelled';
 
 	let {
 		appointment,
@@ -91,7 +90,7 @@
 	const availableSlots = $derived(
 		getAvailableSlots(selectedDateKey, upcomingAppointments, appointment.id)
 	);
-	const pill = $derived(getPill(appointment));
+	const pill = $derived(getAppointmentDisplayStatus(appointment));
 	const hasChanges = $derived(
 		selectedSlot !== null &&
 			(() => {
@@ -100,7 +99,7 @@
 				return current.date !== next.date || current.time !== next.time;
 			})()
 	);
-	const canSendReminder = $derived(!isCancelled && !appointment.reminderSentAt);
+	const canSendReminder = $derived(pill.variant === 'reminder');
 
 	$effect(() => {
 		selectedDateKey;
@@ -143,13 +142,6 @@
 		}
 
 		return slots;
-	}
-
-	function getPill(appt: AppointmentRow): { label: string; variant: PillVariant } {
-		if (appt.status === 'cancelled') return { label: 'Cancelled', variant: 'cancelled' };
-		if (appt.reminderSentAt) return { label: 'Pending confirmation', variant: 'pending' };
-		if (appt.isConfirmed) return { label: 'Confirmed', variant: 'confirmed' };
-		return { label: 'Needs reminder', variant: 'reminder' };
 	}
 
 	function isPastDay(dayKey: DateKey): boolean {
@@ -243,20 +235,30 @@
 						<dt>Scheduled</dt>
 						<dd>{formatDateTimeInZone(startsAt, businessTimezone)}</dd>
 					</div>
+					<div>
+						<dt>Status</dt>
+						<dd>
+							<span class="status-pill status-pill--modal status-pill--{pill.variant}"
+								>{pill.label}</span
+							>
+						</dd>
+					</div>
 				</dl>
 
-				<p class="manage-client-status">
-					<span class="status-pill status-pill--{pill.variant}">{pill.label}</span>
-				</p>
-
 				{#if !isCancelled}
-					<form method="post" action="?/sendReminder" use:enhance class="manage-client-actions">
-						<input type="hidden" name="appointmentId" value={appointment.id} />
-						<input type="hidden" name="week" value={week} />
-						<button type="submit" class="button" disabled={!canSendReminder}>
-							{appointment.reminderSentAt ? 'Reminder sent' : 'Send reminder'}
-						</button>
-					</form>
+					<div class="manage-client-actions">
+						{#if canSendReminder}
+							<form method="post" action="?/sendReminder" use:enhance>
+								<input type="hidden" name="appointmentId" value={appointment.id} />
+								<input type="hidden" name="week" value={week} />
+								<button type="submit" class="button">Send reminder</button>
+							</form>
+						{:else}
+							<button type="button" class="button" disabled>
+								{pill.variant === 'scheduled' ? 'Send reminder' : 'Reminder sent'}
+							</button>
+						{/if}
+					</div>
 
 					{#if cancelConfirming}
 						<div class="manage-cancel-confirm" role="alert">

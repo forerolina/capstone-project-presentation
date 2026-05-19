@@ -65,6 +65,7 @@ export interface SendAppointmentReminderParams {
 	to: string;
 	clientName: string;
 	startsAt: Date;
+	confirmUrl: string;
 }
 
 export async function sendAppointmentReminder(
@@ -89,7 +90,8 @@ export async function sendAppointmentReminder(
 		'',
 		`When: ${when}`,
 		'',
-		'Please reply to confirm you can still make it.'
+		'Please confirm you can still make it:',
+		params.confirmUrl
 	];
 
 	if (prepNotes) {
