@@ -30,33 +30,35 @@
 		<div class="dashboard-heading">
 			<h1>Dashboard</h1>
 
-			<nav class="dashboard-week-nav" aria-label="Week navigation">
-				<a
-					href="{resolve('/dashboard')}?week={data.prevWeek}"
-					class="dashboard-week-chevron"
-					aria-label="Previous week"
-				>
-					&lt;
-				</a>
-				<p class="dashboard-week-context">{weekLabel}</p>
-				<a
-					href="{resolve('/dashboard')}?week={data.nextWeek}"
-					class="dashboard-week-chevron"
-					aria-label="Next week"
-				>
-					&gt;
-				</a>
-			</nav>
-
-			{#if !isCurrentWeek}
+			<div class="dashboard-week-controls">
 				<a
 					href="{resolve('/dashboard')}?week={data.currentWeek}"
 					class="button dashboard-week-today"
+					class:dashboard-week-today--current={isCurrentWeek}
 					aria-label="Go to current week"
+					aria-current={isCurrentWeek ? 'page' : undefined}
 				>
 					Today
 				</a>
-			{/if}
+
+				<nav class="dashboard-week-nav" aria-label="Week navigation">
+					<a
+						href="{resolve('/dashboard')}?week={data.prevWeek}"
+						class="dashboard-week-chevron"
+						aria-label="Previous week"
+					>
+						&lt;
+					</a>
+					<p class="dashboard-week-context">{weekLabel}</p>
+					<a
+						href="{resolve('/dashboard')}?week={data.nextWeek}"
+						class="dashboard-week-chevron"
+						aria-label="Next week"
+					>
+						&gt;
+					</a>
+				</nav>
+			</div>
 		</div>
 
 		<p class="page-header-tagline">Manage upcoming bookings</p>
@@ -67,6 +69,7 @@
 		<WeekCalendar
 			weekDays={data.weekDays}
 			appointments={data.appointments}
+			upcomingAppointments={data.upcomingAppointments}
 			week={data.weekParam}
 			{form}
 		/>

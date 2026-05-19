@@ -14,6 +14,10 @@ import { AppointmentStatus } from '$lib/server/appointment/status';
 import { auth } from '$lib/server/auth';
 import { db } from '$lib/server/db';
 import { appointment } from '$lib/server/db/schema';
+import { sendAppointmentReminder } from '$lib/server/email';
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const UPCOMING_WINDOW_DAYS = 90;
 
 function weekFromForm(formData: FormData, url: URL): string {
 	const raw = formData.get('week');
@@ -27,11 +31,24 @@ export const load: PageServerLoad = async ({ url }) => {
 	const weekStart = parseWeekParam(url.searchParams.get('week'));
 	const { start, end } = getWeekRange(weekStart);
 
-	const appointments = await db
-		.select()
-		.from(appointment)
-		.where(and(gte(appointment.startsAt, start), lt(appointment.startsAt, end)))
-		.orderBy(asc(appointment.startsAt));
+	const [appointments, upcomingAppointments] = await Promise.all([
+		db
+			.select()
+			.from(appointment)
+			.where(and(gte(appointment.startsAt, start), lt(appointment.startsAt, end)))
+			.orderBy(asc(appointment.startsAt)),
+		db
+			.select()
+			.from(appointment)
+			.where(
+				and(
+					eq(appointment.status, AppointmentStatus.Upcoming),
+					gte(appointment.startsAt, new Date()),
+					lt(appointment.startsAt, new Date(Date.now() + UPCOMING_WINDOW_DAYS * MS_PER_DAY))
+				)
+			)
+			.orderBy(asc(appointment.startsAt))
+	]);
 
 	return {
 		weekStart: weekStart.toISOString(),
@@ -40,7 +57,8 @@ export const load: PageServerLoad = async ({ url }) => {
 		prevWeek: formatWeekParam(addWeeks(weekStart, -1)),
 		nextWeek: formatWeekParam(addWeeks(weekStart, 1)),
 		currentWeek: formatWeekParam(getWeekMonday(new Date())),
-		appointments
+		appointments,
+		upcomingAppointments
 	};
 };
 
@@ -133,6 +151,47 @@ export const actions: Actions = {
 
 		const targetWeek = formatWeekParam(getWeekMonday(startsAtDate));
 		throw redirect(303, `/dashboard?week=${targetWeek}`);
+	},
+
+	sendReminder: async ({ request, url }) => {
+		const formData = await request.formData();
+		const appointmentId = formData.get('appointmentId');
+		const week = weekFromForm(formData, url);
+
+		if (typeof appointmentId !== 'string' || appointmentId === '') {
+			return fail(400, { message: 'Missing appointment.' });
+		}
+
+		const [row] = await db
+			.select()
+			.from(appointment)
+			.where(eq(appointment.id, appointmentId))
+			.limit(1);
+
+		if (!row) {
+			return fail(404, { message: 'Appointment not found.' });
+		}
+
+		if (row.status === AppointmentStatus.Cancelled) {
+			return fail(400, { message: 'Cannot send reminder for a cancelled appointment.' });
+		}
+
+		if (row.reminderSentAt) {
+			throw redirect(303, `/dashboard?week=${week}`);
+		}
+
+		await sendAppointmentReminder({
+			to: row.clientEmail,
+			clientName: row.clientName,
+			startsAt: row.startsAt
+		});
+
+		await db
+			.update(appointment)
+			.set({ reminderSentAt: new Date() })
+			.where(eq(appointment.id, appointmentId));
+
+		throw redirect(303, `/dashboard?week=${week}`);
 	},
 
 	signOut: async (event) => {

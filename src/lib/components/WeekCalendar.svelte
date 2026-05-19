@@ -1,5 +1,6 @@
 <script lang="ts">
 	import AppointmentCard, { type AppointmentRow } from '$lib/components/AppointmentCard.svelte';
+	import ManageAppointmentModal from '$lib/components/ManageAppointmentModal.svelte';
 	import { isSameLocalDay } from '$lib/calendar/week';
 
 	type FormState = {
@@ -10,11 +11,13 @@
 	let {
 		weekDays,
 		appointments,
+		upcomingAppointments,
 		week,
 		form = null
 	}: {
 		weekDays: string[];
 		appointments: AppointmentRow[];
+		upcomingAppointments: AppointmentRow[];
 		week: string;
 		form?: FormState;
 	} = $props();
@@ -24,14 +27,14 @@
 	const CALENDAR_END = 20;
 	const HOURS = Array.from({ length: CALENDAR_END - CALENDAR_START }, (_, i) => CALENDAR_START + i);
 
-	let editingId = $state<string | null>(null);
-	let cancelConfirmId = $state<string | null>(null);
+	let managingAppointment = $state<AppointmentRow | null>(null);
 
 	$effect(() => {
-		if (form?.appointmentId) {
-			editingId = form.appointmentId;
-			cancelConfirmId = null;
-		}
+		if (!form?.appointmentId) return;
+		const match =
+			appointments.find((a) => a.id === form.appointmentId) ??
+			upcomingAppointments.find((a) => a.id === form.appointmentId);
+		if (match) managingAppointment = match;
 	});
 
 	function asDate(value: Date | string): Date {
@@ -54,21 +57,6 @@
 	function formatHourLabel(hour: number): string {
 		if (hour === 12) return '12 PM';
 		return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
-	}
-
-	function startEdit(id: string) {
-		editingId = id;
-		cancelConfirmId = null;
-	}
-
-	function startCancel(id: string) {
-		cancelConfirmId = id;
-		editingId = null;
-	}
-
-	function discard() {
-		editingId = null;
-		cancelConfirmId = null;
 	}
 
 	const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -114,14 +102,8 @@
 					{#each dayAppointments as a (a.id)}
 						<AppointmentCard
 							appointment={a}
-							{week}
-							{form}
-							editing={editingId === a.id}
-							cancelConfirming={cancelConfirmId === a.id}
 							cardStyle={cardStyle(a.startsAt)}
-							onEdit={() => startEdit(a.id)}
-							onCancel={() => startCancel(a.id)}
-							onDiscard={discard}
+							onManage={() => (managingAppointment = a)}
 						/>
 					{/each}
 				</ul>
@@ -129,3 +111,15 @@
 		{/each}
 	</div>
 </div>
+
+{#if managingAppointment}
+	{#key managingAppointment.id}
+		<ManageAppointmentModal
+			appointment={managingAppointment}
+			{upcomingAppointments}
+			{week}
+			{form}
+			onClose={() => (managingAppointment = null)}
+		/>
+	{/key}
+{/if}
