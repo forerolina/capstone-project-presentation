@@ -1,74 +1,51 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
+	import AppointmentBookingFields from '$lib/components/AppointmentBookingFields.svelte';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	let selectedSlot = $state<Date | null>(null);
+	const fieldErrors = $derived(form?.fieldErrors ?? {});
 </script>
 
-<main class="page">
-	<header class="page-header">
-		<h1>Book an appointment</h1>
-		<p>Choose a service and time. No account needed — you'll get a confirmation by email.</p>
+<main class="page page--wide booking-page">
+	<header class="page-header page-header--booking">
+		<div class="booking-page__top-bar">
+			<div class="booking-page__intro">
+				<h1>Book an appointment</h1>
+				<p class="page-header-tagline">
+					Choose a service and time. No account needed — you'll get a confirmation by email.
+				</p>
+			</div>
+			{#if data.isOwner}
+				<a href={resolve('/dashboard')} class="secondary booking-page__owner-link">Dashboard</a>
+			{:else}
+				<a href={resolve('/login')} class="secondary booking-page__owner-link">Business owner login</a>
+			{/if}
+		</div>
 	</header>
 
-	<form method="post" use:enhance class="stack">
-		<div class="field">
-			<label for="clientName">Name</label>
-			<input id="clientName" name="clientName" required autocomplete="name" />
-			{#if form?.fieldErrors?.clientName}
-				<p class="field-error" role="alert">{form.fieldErrors.clientName.join(', ')}</p>
-			{/if}
-		</div>
-
-		<div class="field">
-			<label for="clientEmail">Email</label>
-			<input
-				id="clientEmail"
-				type="email"
-				name="clientEmail"
-				required
-				autocomplete="email"
+	<form method="post" class="create-modal__form booking-page__form" use:enhance>
+		<div class="booking-page__card manage-modal__inner">
+			<AppointmentBookingFields
+				idPrefix="book"
+				upcomingAppointments={data.upcomingAppointments}
+				services={data.services}
+				businessTimezone={data.businessTimezone}
+				{fieldErrors}
+				bind:selectedSlot
 			/>
-			{#if form?.fieldErrors?.clientEmail}
-				<p class="field-error" role="alert">{form.fieldErrors.clientEmail.join(', ')}</p>
-			{/if}
-		</div>
 
-		<div class="field">
-			<label for="clientPhone">Phone <span class="meta">(optional)</span></label>
-			<input id="clientPhone" type="tel" name="clientPhone" autocomplete="tel" />
-			{#if form?.fieldErrors?.clientPhone}
-				<p class="field-error" role="alert">{form.fieldErrors.clientPhone.join(', ')}</p>
-			{/if}
+			<footer class="manage-modal__footer">
+				{#if form?.message}
+					<p class="field-error" role="alert">{form.message}</p>
+				{/if}
+				<div class="manage-modal__save">
+					<button type="submit" class="button" disabled={!selectedSlot}>Book appointment</button>
+				</div>
+			</footer>
 		</div>
-
-		<div class="field">
-			<label for="serviceName">Service</label>
-			<select id="serviceName" name="serviceName" required>
-				<option value="" disabled selected>Select…</option>
-				{#each data.services as service (service)}
-					<option value={service}>{service}</option>
-				{/each}
-			</select>
-			{#if form?.fieldErrors?.serviceName}
-				<p class="field-error" role="alert">{form.fieldErrors.serviceName.join(', ')}</p>
-			{/if}
-		</div>
-
-		<div class="field">
-			<label for="startsAt">Date and time</label>
-			<input id="startsAt" type="datetime-local" name="startsAt" required />
-			{#if form?.fieldErrors?.startsAt}
-				<p class="field-error" role="alert">{form.fieldErrors.startsAt.join(', ')}</p>
-			{/if}
-		</div>
-
-		<div class="actions">
-			<button type="submit">Book appointment</button>
-		</div>
-
-		{#if form?.message}
-			<p class="form-message" role="alert">{form.message}</p>
-		{/if}
 	</form>
 </main>

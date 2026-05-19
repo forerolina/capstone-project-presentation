@@ -124,11 +124,14 @@
 		appointments: AppointmentRow[],
 		excludeId: string
 	): Date[] {
+		const now = new Date();
 		const slots: Date[] = [];
 
 		for (let hour = CALENDAR_START; hour < CALENDAR_END; hour++) {
 			const time = `${String(hour).padStart(2, '0')}:00`;
 			const slot = wallClockToDate(dayKey, time, businessTimezone);
+			if (slot <= now) continue;
+
 			const slotEnd = new Date(slot.getTime() + MS_PER_HOUR);
 			const hasConflict = appointments.some((appt) => {
 				if (appt.id === excludeId || appt.status !== 'upcoming') return false;
@@ -168,6 +171,17 @@
 
 	function close() {
 		onClose();
+	}
+
+	function discardChanges() {
+		if (!hasChanges) {
+			close();
+			return;
+		}
+		const reset = initialModalState(appointment);
+		viewMonthKey = reset.viewMonthKey;
+		selectedDateKey = reset.selectedDateKey;
+		selectedSlot = reset.selectedSlot;
 	}
 
 	function handleDialogClick(event: MouseEvent) {
@@ -289,33 +303,35 @@
 						&gt;
 					</button>
 				</div>
-				<div class="month-weekdays" aria-hidden="true">
-					{#each ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as label}
-						<span class="month-weekday">{label}</span>
-					{/each}
-				</div>
-				<div class="month-grid" role="grid">
-					{#each monthGridDayKeys as dayKey (dayKey)}
-						{@const inMonth = isCurrentMonth(dayKey)}
-						{@const past = isPastDay(dayKey)}
-						{@const selected = dayKey === selectedDateKey}
-						{@const today = dayKey === todayKey}
-						<button
-							type="button"
-							role="gridcell"
-							class="month-day"
-							class:month-day--outside={!inMonth}
-							class:month-day--past={past}
-							class:month-day--selected={selected}
-							class:month-day--today={today}
-							disabled={past}
-							aria-label={formatSelectedDayLabel(dayKey)}
-							aria-selected={selected}
-							onclick={() => selectDay(dayKey)}
-						>
-							{Number(dayKey.split('-')[2])}
-						</button>
-					{/each}
+				<div class="month-calendar" role="grid">
+					<div class="month-weekdays" aria-hidden="true">
+						{#each ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as label}
+							<span class="month-weekday" role="columnheader">{label}</span>
+						{/each}
+					</div>
+					<div class="month-grid">
+						{#each monthGridDayKeys as dayKey (dayKey)}
+							{@const inMonth = isCurrentMonth(dayKey)}
+							{@const past = isPastDay(dayKey)}
+							{@const selected = dayKey === selectedDateKey}
+							{@const today = dayKey === todayKey}
+							<button
+								type="button"
+								role="gridcell"
+								class="month-day"
+								class:month-day--outside={!inMonth}
+								class:month-day--past={past}
+								class:month-day--selected={selected}
+								class:month-day--today={today}
+								disabled={past}
+								aria-label={formatSelectedDayLabel(dayKey)}
+								aria-selected={selected}
+								onclick={() => selectDay(dayKey)}
+							>
+								{Number(dayKey.split('-')[2])}
+							</button>
+						{/each}
+					</div>
 				</div>
 			</section>
 
@@ -342,38 +358,42 @@
 			</section>
 		</div>
 
-		{#if !isCancelled && hasChanges && selectedSlot}
 			<footer class="manage-modal__footer">
 				{#if form?.appointmentId === appointment.id && form?.message}
 					<p class="field-error" role="alert">{form.message}</p>
 				{/if}
-				<form
-					method="post"
-					action="?/reschedule"
-					class="manage-modal__save"
-					use:enhance={() => {
-						return async ({ result, update }) => {
-							await update();
-							if (result.type === 'redirect') close();
-						};
-					}}
-				>
-					<input type="hidden" name="appointmentId" value={appointment.id} />
-					<input type="hidden" name="week" value={week} />
-					<input
-						type="hidden"
-						name="appointmentDate"
-						value={toDateInputValue(selectedSlot, businessTimezone)}
-					/>
-					<input
-						type="hidden"
-						name="appointmentTime"
-						value={toTimeInputValue(selectedSlot, businessTimezone)}
-					/>
-					<button type="submit" class="button">Save changes</button>
-				</form>
-				<button type="button" class="secondary manage-modal__discard" onclick={close}>Discard</button>
+				{#if selectedSlot}
+					<form
+						method="post"
+						action="?/reschedule"
+						class="manage-modal__save"
+						use:enhance={() => {
+							return async ({ result, update }) => {
+								await update();
+								if (result.type === 'redirect') close();
+							};
+						}}
+					>
+						<input type="hidden" name="appointmentId" value={appointment.id} />
+						<input type="hidden" name="week" value={week} />
+						<input
+							type="hidden"
+							name="appointmentDate"
+							value={toDateInputValue(selectedSlot, businessTimezone)}
+						/>
+						<input
+							type="hidden"
+							name="appointmentTime"
+							value={toTimeInputValue(selectedSlot, businessTimezone)}
+						/>
+						<button type="submit" class="button" disabled={!hasChanges}>
+							Save changes
+						</button>
+					</form>
+				{/if}
+				<button type="button" class="secondary manage-modal__discard" onclick={discardChanges}>
+					Discard
+				</button>
 			</footer>
-		{/if}
 	</div>
 </dialog>

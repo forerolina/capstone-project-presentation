@@ -114,9 +114,71 @@ a:hover {
 	margin-bottom: 0.5rem;
 }
 
-.dashboard-heading h1 {
-	margin: 0 auto 0 0;
+.dashboard-title-group {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
 	flex-shrink: 0;
+}
+
+.dashboard-heading h1 {
+	margin: 0;
+	flex-shrink: 0;
+}
+
+.dashboard-new-appointment {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 2.25rem;
+	height: 2.25rem;
+	padding: 0;
+	border: 1px solid #222;
+	border-radius: 999px;
+	background: #111;
+	color: #fff;
+	font: inherit;
+	cursor: pointer;
+}
+
+.dashboard-new-appointment:hover,
+.dashboard-new-appointment:focus-visible {
+	background: #333;
+}
+
+.dashboard-new-appointment__icon {
+	font-size: 1.375rem;
+	font-weight: 300;
+	line-height: 1;
+}
+
+.dashboard-new-appointment__label {
+	position: absolute;
+	top: calc(100% + 0.4rem);
+	left: 50%;
+	z-index: 1;
+	padding: 0.35rem 0.55rem;
+	border-radius: 6px;
+	background: #111;
+	color: #fff;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	line-height: 1.2;
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	transform: translateX(-50%) translateY(-2px);
+	transition:
+		opacity 0.15s ease,
+		transform 0.15s ease;
+}
+
+.dashboard-new-appointment:hover .dashboard-new-appointment__label,
+.dashboard-new-appointment:focus-visible .dashboard-new-appointment__label {
+	opacity: 1;
+	transform: translateX(-50%) translateY(0);
 }
 
 .dashboard-week-controls {
@@ -668,10 +730,12 @@ th {
 	display: flex;
 	flex-direction: column;
 	max-height: min(90vh, 720px);
+	overflow: hidden;
 }
 
 .manage-modal__header {
 	display: flex;
+	flex-shrink: 0;
 	align-items: center;
 	justify-content: space-between;
 	padding: 1rem 1.25rem;
@@ -774,34 +838,42 @@ th {
 	color: #374151;
 }
 
-.month-weekdays {
+.month-calendar {
 	display: grid;
-	grid-template-columns: repeat(7, 1fr);
+	grid-template-columns: repeat(7, minmax(0, 1fr));
 	gap: 2px;
-	margin-bottom: 0.35rem;
+	width: 100%;
+}
+
+.month-weekdays,
+.month-grid {
+	display: contents;
 }
 
 .month-weekday {
-	text-align: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 0;
+	padding: 0 0 0.25rem;
 	font-size: 0.625rem;
 	font-weight: 600;
 	text-transform: uppercase;
 	color: #6b7280;
-}
-
-.month-grid {
-	display: grid;
-	grid-template-columns: repeat(7, 1fr);
-	gap: 2px;
+	line-height: 1;
 }
 
 .month-day {
+	width: 100%;
+	min-width: 0;
 	aspect-ratio: 1;
+	padding: 0;
 	border: none;
 	border-radius: 9999px;
 	background: transparent;
 	font: inherit;
 	font-size: 0.8125rem;
+	line-height: 1;
 	cursor: pointer;
 	color: #111827;
 }
@@ -893,12 +965,14 @@ th {
 
 .manage-modal__footer {
 	display: flex;
+	flex-shrink: 0;
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: flex-end;
 	gap: 0.5rem;
 	padding: 1rem 1.25rem;
 	border-top: 1px solid #e5e7eb;
+	background: #fff;
 }
 
 .manage-modal__footer .field-error {
@@ -917,6 +991,84 @@ th {
 
 .manage-modal__discard {
 	margin: 0;
+}
+
+.create-modal__form {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+}
+
+.create-modal__form .manage-modal__columns {
+	flex: 1;
+	min-height: 0;
+}
+
+.create-modal__form .manage-modal__column--client .field {
+	margin-bottom: 0.75rem;
+}
+
+.create-modal__form .manage-modal__column--client .field:last-child {
+	margin-bottom: 0;
+}
+
+/* Public book page — same three-column booking UI as create modal */
+.page-header--booking {
+	margin-bottom: 1.25rem;
+	padding-bottom: 0;
+	border-bottom: none;
+}
+
+.page-header--booking h1 {
+	margin: 0 0 0.35rem;
+}
+
+.page-header--booking .page-header-tagline {
+	margin: 0;
+	color: #555;
+	font-size: 0.9375rem;
+}
+
+.booking-page__top-bar {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1rem 1.5rem;
+}
+
+.booking-page__intro {
+	min-width: 0;
+}
+
+.booking-page__owner-link {
+	flex-shrink: 0;
+	margin-top: 0.15rem;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.booking-page__owner-link:hover {
+	text-decoration: underline;
+}
+
+.booking-page__form {
+	max-width: min(960px, 100%);
+	margin: 0 auto;
+}
+
+.booking-page__card {
+	border: 1px solid #e5e7eb;
+	border-radius: 12px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.booking-page__card.manage-modal__inner {
+	max-height: none;
+}
+
+.booking-page__card .manage-modal__columns {
+	min-height: min(420px, 70vh);
 }
 
 @media (max-width: 768px) {

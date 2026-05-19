@@ -1,14 +1,23 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import CreateAppointmentModal from '$lib/components/CreateAppointmentModal.svelte';
 	import WeekCalendar from '$lib/components/WeekCalendar.svelte';
 	import { formatWeekLabel } from '$lib/calendar/week';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
+	let showCreateModal = $state(false);
+
 	const weekLabel = $derived(formatWeekLabel(data.weekParam, data.businessTimezone));
 	const isCurrentWeek = $derived(data.weekParam === data.currentWeek);
+
+	$effect(() => {
+		if (form && 'createForm' in form && form.createForm) {
+			showCreateModal = true;
+		}
+	});
 </script>
 
 <main class="page page--wide">
@@ -27,7 +36,18 @@
 		</div>
 
 		<div class="dashboard-heading">
-			<h1>Dashboard</h1>
+			<div class="dashboard-title-group">
+				<h1>Dashboard</h1>
+				<button
+					type="button"
+					class="dashboard-new-appointment"
+					aria-label="New appointment"
+					onclick={() => (showCreateModal = true)}
+				>
+					<span class="dashboard-new-appointment__icon" aria-hidden="true">+</span>
+					<span class="dashboard-new-appointment__label">New appointment</span>
+				</button>
+			</div>
 
 			<div class="dashboard-week-controls">
 				<a
@@ -75,3 +95,14 @@
 		/>
 	</section>
 </main>
+
+{#if showCreateModal}
+	<CreateAppointmentModal
+		upcomingAppointments={data.upcomingAppointments}
+		services={data.services}
+		week={data.weekParam}
+		businessTimezone={data.businessTimezone}
+		{form}
+		onClose={() => (showCreateModal = false)}
+	/>
+{/if}

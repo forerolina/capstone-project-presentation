@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { and, asc, eq, gte, lt } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
+import { BOOKING_SERVICES } from '$lib/booking/services';
 import { wallClockToDate } from '$lib/calendar/datetime';
 import {
 	addWeeks,
@@ -10,12 +11,17 @@ import {
 	getWeekRange,
 	parseWeekParam
 } from '$lib/calendar/week';
+import { isSlotAvailable } from '$lib/server/appointment/slots';
 import { AppointmentStatus } from '$lib/server/appointment/status';
 import { auth } from '$lib/server/auth';
+import {
+	ownerCreateFormSchema,
+	type BookingFieldErrors
+} from '$lib/server/booking/schema';
 import { getBusinessTimezone } from '$lib/server/calendar/timezone';
 import { db } from '$lib/server/db';
 import { appointment } from '$lib/server/db/schema';
-import { sendAppointmentReminder } from '$lib/server/email';
+import { sendAppointmentReminder, sendBookingConfirmation } from '$lib/server/email';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const UPCOMING_WINDOW_DAYS = 90;
@@ -32,12 +38,17 @@ export const load: PageServerLoad = async ({ url }) => {
 	const timeZone = getBusinessTimezone();
 	const weekMondayKey = parseWeekParam(url.searchParams.get('week'), timeZone);
 	const { start, end } = getWeekRange(weekMondayKey, timeZone);
-
 	const [appointments, upcomingAppointments] = await Promise.all([
 		db
 			.select()
 			.from(appointment)
-			.where(and(gte(appointment.startsAt, start), lt(appointment.startsAt, end)))
+			.where(
+				and(
+					gte(appointment.startsAt, start),
+					lt(appointment.startsAt, end),
+					eq(appointment.status, AppointmentStatus.Upcoming)
+				)
+			)
 			.orderBy(asc(appointment.startsAt)),
 		db
 			.select()
@@ -60,7 +71,8 @@ export const load: PageServerLoad = async ({ url }) => {
 		nextWeek: formatWeekParam(addWeeks(weekMondayKey, 1)),
 		currentWeek: formatWeekParam(getWeekMondayKeyFromDate(new Date(), timeZone)),
 		appointments,
-		upcomingAppointments
+		upcomingAppointments,
+		services: [...BOOKING_SERVICES]
 	};
 };
 
@@ -156,6 +168,114 @@ export const actions: Actions = {
 			.update(appointment)
 			.set({ startsAt: startsAtDate })
 			.where(eq(appointment.id, appointmentId));
+
+		const targetWeek = formatWeekParam(getWeekMondayKeyFromDate(startsAtDate, timeZone));
+		throw redirect(303, `/dashboard?week=${targetWeek}`);
+	},
+
+	create: async ({ request, url }) => {
+		const timeZone = getBusinessTimezone();
+		const formData = await request.formData();
+		const week = weekFromForm(formData, url, timeZone);
+		const phoneRaw = formData.get('clientPhone');
+
+		const parsed = ownerCreateFormSchema.safeParse({
+			clientName: formData.get('clientName'),
+			clientEmail: formData.get('clientEmail'),
+			clientPhone:
+				typeof phoneRaw === 'string' && phoneRaw.trim() !== '' ? phoneRaw : undefined,
+			serviceName: formData.get('serviceName'),
+			appointmentDate: formData.get('appointmentDate'),
+			appointmentTime: formData.get('appointmentTime')
+		});
+
+		if (!parsed.success) {
+			const fieldErrors = parsed.error.flatten().fieldErrors as BookingFieldErrors;
+			return fail(400, {
+				createForm: true,
+				fieldErrors,
+				message: 'Please fix the form.',
+				week
+			});
+		}
+
+		const { clientName, clientEmail, clientPhone, serviceName, appointmentDate, appointmentTime } =
+			parsed.data;
+
+		const startsAtDate = wallClockToDate(appointmentDate, appointmentTime, timeZone);
+		if (Number.isNaN(startsAtDate.getTime())) {
+			return fail(400, {
+				createForm: true,
+				message: 'Invalid date.',
+				fieldErrors: {} as BookingFieldErrors,
+				week
+			});
+		}
+
+		if (startsAtDate <= new Date()) {
+			return fail(400, {
+				createForm: true,
+				message: 'Appointment must be in the future.',
+				fieldErrors: {} as BookingFieldErrors,
+				week
+			});
+		}
+
+		const upcomingForSlots = await db
+			.select()
+			.from(appointment)
+			.where(
+				and(
+					eq(appointment.status, AppointmentStatus.Upcoming),
+					gte(appointment.startsAt, new Date()),
+					lt(
+						appointment.startsAt,
+						new Date(Date.now() + UPCOMING_WINDOW_DAYS * MS_PER_DAY)
+					)
+				)
+			);
+
+		if (!isSlotAvailable(startsAtDate, upcomingForSlots)) {
+			return fail(400, {
+				createForm: true,
+				message: 'That time is no longer available. Pick another slot.',
+				fieldErrors: {} as BookingFieldErrors,
+				week
+			});
+		}
+
+		const [inserted] = await db
+			.insert(appointment)
+			.values({
+				clientName,
+				clientEmail,
+				clientPhone: clientPhone ?? null,
+				startsAt: startsAtDate,
+				serviceName,
+				isConfirmed: true,
+				reminderSentAt: null,
+				status: AppointmentStatus.Upcoming
+			})
+			.returning();
+
+		if (!inserted) {
+			return fail(500, {
+				createForm: true,
+				message: 'Could not create appointment.',
+				fieldErrors: {} as BookingFieldErrors,
+				week
+			});
+		}
+
+		try {
+			await sendBookingConfirmation({
+				to: clientEmail,
+				clientName,
+				startsAt: startsAtDate
+			});
+		} catch (err) {
+			console.error('Confirmation email failed', err);
+		}
 
 		const targetWeek = formatWeekParam(getWeekMondayKeyFromDate(startsAtDate, timeZone));
 		throw redirect(303, `/dashboard?week=${targetWeek}`);
