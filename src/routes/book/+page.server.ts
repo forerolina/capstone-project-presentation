@@ -1,7 +1,9 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { datetimeLocalToDate } from '$lib/calendar/datetime';
 import { BOOKING_SERVICES } from '$lib/booking/services';
 import { AppointmentStatus } from '$lib/server/appointment/status';
+import { getBusinessTimezone } from '$lib/server/calendar/timezone';
 import { bookingFormSchema, type BookingFieldErrors } from '$lib/server/booking/schema';
 import { db } from '$lib/server/db';
 import { appointment } from '$lib/server/db/schema';
@@ -29,8 +31,9 @@ export const actions: Actions = {
 		}
 
 		const { clientName, clientEmail, clientPhone, serviceName, startsAt } = parsed.data;
-		const startsAtDate = new Date(startsAt);
-		if (Number.isNaN(startsAtDate.getTime())) {
+		const timeZone = getBusinessTimezone();
+		const startsAtDate = datetimeLocalToDate(startsAt, timeZone);
+		if (!startsAtDate || Number.isNaN(startsAtDate.getTime())) {
 			return fail(400, { message: 'Invalid date.', fieldErrors: {} as BookingFieldErrors });
 		}
 		if (startsAtDate <= new Date()) {

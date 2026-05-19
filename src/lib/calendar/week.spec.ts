@@ -1,41 +1,40 @@
 import { describe, expect, it } from 'vitest';
+import { wallClockToDate } from './datetime';
 import {
 	addWeeks,
 	formatWeekParam,
-	getWeekMonday,
+	getWeekMondayKey,
 	getWeekRange,
-	isSameLocalDay,
+	isSameDateKey,
 	parseWeekParam
 } from './week';
 
+const TZ = 'UTC';
+
 describe('week calendar helpers', () => {
-	it('getWeekMonday returns Monday for a Wednesday', () => {
-		const wed = new Date(2026, 4, 13);
-		const monday = getWeekMonday(wed);
-		expect(monday.getDay()).toBe(1);
-		expect(monday.getDate()).toBe(11);
+	it('getWeekMondayKey returns Monday for a Wednesday', () => {
+		expect(getWeekMondayKey('2026-05-13')).toBe('2026-05-11');
 	});
 
-	it('getWeekRange spans seven days', () => {
-		const monday = new Date(2026, 4, 12);
-		const { start, end } = getWeekRange(monday);
+	it('getWeekRange spans seven days in UTC', () => {
+		const { start, end } = getWeekRange('2026-05-12', TZ);
 		expect(end.getTime() - start.getTime()).toBe(7 * 24 * 60 * 60 * 1000);
+		expect(start.toISOString()).toBe('2026-05-12T00:00:00.000Z');
 	});
 
 	it('parseWeekParam normalizes to that week’s Monday', () => {
-		const monday = parseWeekParam('2026-05-13');
+		const monday = parseWeekParam('2026-05-13', TZ);
 		expect(formatWeekParam(monday)).toBe('2026-05-11');
 	});
 
 	it('addWeeks shifts by seven days', () => {
-		const monday = new Date(2026, 4, 12);
-		const next = addWeeks(monday, 1);
-		expect(formatWeekParam(next)).toBe('2026-05-19');
+		expect(addWeeks('2026-05-12', 1)).toBe('2026-05-19');
 	});
 
-	it('isSameLocalDay compares calendar days', () => {
-		const a = new Date(2026, 4, 12, 9, 0);
-		const b = new Date(2026, 4, 12, 17, 30);
-		expect(isSameLocalDay(a, b)).toBe(true);
+	it('isSameDateKey compares calendar days in a timezone', () => {
+		const morning = wallClockToDate('2026-05-12', '09:00', TZ);
+		const evening = wallClockToDate('2026-05-12', '17:30', TZ);
+		expect(isSameDateKey(morning, '2026-05-12', TZ)).toBe(true);
+		expect(isSameDateKey(evening, '2026-05-12', TZ)).toBe(true);
 	});
 });

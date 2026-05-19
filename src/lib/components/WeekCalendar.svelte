@@ -1,7 +1,12 @@
 <script lang="ts">
 	import AppointmentCard, { type AppointmentRow } from '$lib/components/AppointmentCard.svelte';
 	import ManageAppointmentModal from '$lib/components/ManageAppointmentModal.svelte';
-	import { isSameLocalDay } from '$lib/calendar/week';
+	import { wallClockHour, wallClockMinute, wallClockToDate } from '$lib/calendar/datetime';
+	import {
+		dayOfMonthFromDateKey,
+		isSameDateKey,
+		type DateKey
+	} from '$lib/calendar/week';
 
 	type FormState = {
 		message?: string;
@@ -13,12 +18,14 @@
 		appointments,
 		upcomingAppointments,
 		week,
+		businessTimezone,
 		form = null
 	}: {
-		weekDays: string[];
+		weekDays: DateKey[];
 		appointments: AppointmentRow[];
 		upcomingAppointments: AppointmentRow[];
 		week: string;
+		businessTimezone: string;
 		form?: FormState;
 	} = $props();
 
@@ -41,22 +48,32 @@
 		return value instanceof Date ? value : new Date(value);
 	}
 
-	function appointmentsForDay(dayIso: string): AppointmentRow[] {
-		const day = asDate(dayIso);
+	function appointmentsForDay(dayKey: DateKey): AppointmentRow[] {
 		return appointments
-			.filter((a) => isSameLocalDay(asDate(a.startsAt), day))
+			.filter((a) => isSameDateKey(asDate(a.startsAt), dayKey, businessTimezone))
 			.sort((a, b) => asDate(a.startsAt).getTime() - asDate(b.startsAt).getTime());
 	}
 
 	function cardStyle(startsAt: Date | string): string {
 		const d = asDate(startsAt);
-		const top = (d.getHours() + d.getMinutes() / 60 - CALENDAR_START) * HOUR_HEIGHT;
+		const hour = wallClockHour(d, businessTimezone) + wallClockMinute(d, businessTimezone) / 60;
+		const top = (hour - CALENDAR_START) * HOUR_HEIGHT;
 		return `top: ${top}px; height: ${HOUR_HEIGHT}px;`;
 	}
 
 	function formatHourLabel(hour: number): string {
 		if (hour === 12) return '12 PM';
 		return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
+	}
+
+	function formatDayAriaLabel(dayKey: DateKey): string {
+		return new Intl.DateTimeFormat(undefined, {
+			timeZone: businessTimezone,
+			weekday: 'long',
+			month: 'long',
+			day: 'numeric',
+			year: 'numeric'
+		}).format(wallClockToDate(dayKey, '12:00', businessTimezone));
 	}
 
 	const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -66,11 +83,10 @@
 <div class="calendar">
 	<div class="calendar-header">
 		<div class="calendar-header-cell calendar-header-cell--gutter" aria-hidden="true"></div>
-		{#each workDays as dayIso, i (dayIso)}
-			{@const day = asDate(dayIso)}
+		{#each workDays as dayKey, i (dayKey)}
 			<div class="calendar-header-cell" role="columnheader">
 				<span class="calendar-weekday">{weekdayLabels[i]}</span>
-				<span class="calendar-date">{day.getDate()}</span>
+				<span class="calendar-date">{dayOfMonthFromDateKey(dayKey)}</span>
 			</div>
 		{/each}
 	</div>
@@ -84,12 +100,12 @@
 			{/each}
 		</div>
 
-		{#each workDays as dayIso (dayIso)}
-			{@const dayAppointments = appointmentsForDay(dayIso)}
+		{#each workDays as dayKey (dayKey)}
+			{@const dayAppointments = appointmentsForDay(dayKey)}
 			<div
 				class="calendar-day"
 				role="gridcell"
-				aria-label={asDate(dayIso).toLocaleDateString()}
+				aria-label={formatDayAriaLabel(dayKey)}
 				style="height: {(CALENDAR_END - CALENDAR_START) * HOUR_HEIGHT}px"
 			>
 				<div class="calendar-grid-lines" aria-hidden="true">
@@ -102,6 +118,7 @@
 					{#each dayAppointments as a (a.id)}
 						<AppointmentCard
 							appointment={a}
+							{businessTimezone}
 							cardStyle={cardStyle(a.startsAt)}
 							onManage={() => (managingAppointment = a)}
 						/>
@@ -118,6 +135,7 @@
 			appointment={managingAppointment}
 			{upcomingAppointments}
 			{week}
+			{businessTimezone}
 			{form}
 			onClose={() => (managingAppointment = null)}
 		/>

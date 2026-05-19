@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDateTimeInZone } from '$lib/calendar/datetime';
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 
@@ -6,7 +7,7 @@
 
 	function formatWhen(value: Date | string) {
 		const d = value instanceof Date ? value : new Date(value);
-		return d.toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' });
+		return formatDateTimeInZone(d, data.businessTimezone);
 	}
 </script>
 

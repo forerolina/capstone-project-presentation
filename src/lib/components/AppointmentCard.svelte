@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { formatTimeInZone } from '$lib/calendar/datetime';
+
 	export type AppointmentRow = {
 		id: string;
 		clientName: string;
@@ -15,10 +17,12 @@
 
 	let {
 		appointment: a,
+		businessTimezone,
 		cardStyle = '',
 		onManage
 	}: {
 		appointment: AppointmentRow;
+		businessTimezone: string;
 		cardStyle?: string;
 		onManage: () => void;
 	} = $props();
@@ -28,7 +32,7 @@
 	}
 
 	function formatTime(value: Date | string) {
-		return asDate(value).toLocaleTimeString(undefined, { timeStyle: 'short' });
+		return formatTimeInZone(asDate(value), businessTimezone);
 	}
 
 	function getPill(): { label: string; variant: PillVariant } {

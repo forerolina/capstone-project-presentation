@@ -1,39 +1,54 @@
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+import {
+	addDaysToDateKey,
+	dateKeyFromDate,
+	type DateKey,
+	wallClockToDate
+} from '$lib/calendar/datetime';
 
-function startOfLocalDay(date: Date): Date {
-	return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+export type { DateKey };
+
+export function weekdayFromDateKey(dateKey: DateKey): number {
+	const [year, month, day] = dateKey.split('-').map(Number);
+	return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
 }
 
-/** Monday 00:00 local time for the week containing `date`. */
-export function getWeekMonday(date: Date): Date {
-	const day = startOfLocalDay(date);
-	const weekday = day.getDay();
+/** Monday date key (YYYY-MM-DD) for the week containing `dateKey`. */
+export function getWeekMondayKey(dateKey: DateKey): DateKey {
+	const weekday = weekdayFromDateKey(dateKey);
 	const daysFromMonday = weekday === 0 ? 6 : weekday - 1;
-	return new Date(day.getTime() - daysFromMonday * MS_PER_DAY);
+	return addDaysToDateKey(dateKey, -daysFromMonday);
 }
 
-export function getWeekRange(monday: Date): { start: Date; end: Date } {
-	const start = startOfLocalDay(monday);
-	const end = new Date(start.getTime() + 7 * MS_PER_DAY);
+export function getWeekMondayKeyFromDate(date: Date, timeZone: string): DateKey {
+	return getWeekMondayKey(dateKeyFromDate(date, timeZone));
+}
+
+export function getWeekRange(
+	mondayKey: DateKey,
+	timeZone: string
+): { start: Date; end: Date } {
+	const start = wallClockToDate(mondayKey, '00:00', timeZone);
+	const end = wallClockToDate(addDaysToDateKey(mondayKey, 7), '00:00', timeZone);
 	return { start, end };
 }
 
-export function getWeekDays(monday: Date): Date[] {
-	const start = startOfLocalDay(monday);
-	return Array.from({ length: 7 }, (_, i) => new Date(start.getTime() + i * MS_PER_DAY));
+export function getWeekDayKeys(mondayKey: DateKey): DateKey[] {
+	return Array.from({ length: 7 }, (_, i) => addDaysToDateKey(mondayKey, i));
 }
 
-export function formatWeekLabel(monday: Date): string {
-	const days = getWeekDays(monday);
-	const start = days[0];
-	const end = days[6];
-	const sameMonth = start.getMonth() === end.getMonth();
+export function formatWeekLabel(mondayKey: DateKey, timeZone: string): string {
+	const days = getWeekDayKeys(mondayKey);
+	const start = wallClockToDate(days[0], '12:00', timeZone);
+	const end = wallClockToDate(days[6], '12:00', timeZone);
+	const sameMonth = days[0].slice(0, 7) === days[6].slice(0, 7);
 	const startStr = start.toLocaleDateString(undefined, {
+		timeZone,
 		month: 'short',
 		day: 'numeric',
 		...(sameMonth ? {} : { year: 'numeric' })
 	});
 	const endStr = end.toLocaleDateString(undefined, {
+		timeZone,
 		month: 'short',
 		day: 'numeric',
 		year: 'numeric'
@@ -41,25 +56,34 @@ export function formatWeekLabel(monday: Date): string {
 	return `${startStr} – ${endStr}`;
 }
 
-export function parseWeekParam(value: string | null): Date {
-	if (!value) return getWeekMonday(new Date());
-	const parsed = new Date(`${value}T00:00:00`);
-	if (Number.isNaN(parsed.getTime())) return getWeekMonday(new Date());
-	return getWeekMonday(parsed);
+export function parseWeekParam(value: string | null, timeZone: string): DateKey {
+	if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+		return getWeekMondayKeyFromDate(new Date(), timeZone);
+	}
+	return getWeekMondayKey(value.trim());
 }
 
-export function formatWeekParam(monday: Date): string {
-	const d = startOfLocalDay(monday);
-	const y = d.getFullYear();
-	const m = String(d.getMonth() + 1).padStart(2, '0');
-	const day = String(d.getDate()).padStart(2, '0');
-	return `${y}-${m}-${day}`;
+export function formatWeekParam(mondayKey: DateKey): DateKey {
+	return mondayKey;
 }
 
-export function addWeeks(monday: Date, weeks: number): Date {
-	return new Date(startOfLocalDay(monday).getTime() + weeks * 7 * MS_PER_DAY);
+export function addWeeks(mondayKey: DateKey, weeks: number): DateKey {
+	return addDaysToDateKey(mondayKey, weeks * 7);
 }
 
+export function isSameDateKey(instant: Date, dateKey: DateKey, timeZone: string): boolean {
+	return dateKeyFromDate(instant, timeZone) === dateKey;
+}
+
+export function dayKeyFromDateKey(dateKey: DateKey): DateKey {
+	return dateKey;
+}
+
+export function dayOfMonthFromDateKey(dateKey: DateKey): number {
+	return Number(dateKey.split('-')[2]);
+}
+
+/** @deprecated Use isSameDateKey with a business timezone. */
 export function isSameLocalDay(a: Date, b: Date): boolean {
 	return (
 		a.getFullYear() === b.getFullYear() &&
@@ -68,9 +92,19 @@ export function isSameLocalDay(a: Date, b: Date): boolean {
 	);
 }
 
+/** @deprecated Use getWeekMondayKeyFromDate. */
+export function getWeekMonday(date: Date): Date {
+	const key = getWeekMondayKeyFromDate(date, 'UTC');
+	return wallClockToDate(key, '00:00', 'UTC');
+}
+
+/** @deprecated Use getWeekDayKeys. */
+export function getWeekDays(monday: Date): Date[] {
+	const mondayKey = dateKeyFromDate(monday, 'UTC');
+	return getWeekDayKeys(mondayKey).map((k) => wallClockToDate(k, '00:00', 'UTC'));
+}
+
+/** @deprecated Use dayKeyFromDate / dateKeyFromDate. */
 export function dayKey(date: Date): string {
-	const y = date.getFullYear();
-	const m = String(date.getMonth() + 1).padStart(2, '0');
-	const d = String(date.getDate()).padStart(2, '0');
-	return `${y}-${m}-${d}`;
+	return dateKeyFromDate(date, 'UTC');
 }

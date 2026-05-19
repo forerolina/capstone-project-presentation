@@ -1,17 +1,18 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { and, asc, eq, gte, lt } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
-import { fromDateAndTime } from '$lib/calendar/datetime';
+import { wallClockToDate } from '$lib/calendar/datetime';
 import {
 	addWeeks,
 	formatWeekParam,
-	getWeekDays,
-	getWeekMonday,
+	getWeekDayKeys,
+	getWeekMondayKeyFromDate,
 	getWeekRange,
 	parseWeekParam
 } from '$lib/calendar/week';
 import { AppointmentStatus } from '$lib/server/appointment/status';
 import { auth } from '$lib/server/auth';
+import { getBusinessTimezone } from '$lib/server/calendar/timezone';
 import { db } from '$lib/server/db';
 import { appointment } from '$lib/server/db/schema';
 import { sendAppointmentReminder } from '$lib/server/email';
@@ -19,17 +20,18 @@ import { sendAppointmentReminder } from '$lib/server/email';
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const UPCOMING_WINDOW_DAYS = 90;
 
-function weekFromForm(formData: FormData, url: URL): string {
+function weekFromForm(formData: FormData, url: URL, timeZone: string): string {
 	const raw = formData.get('week');
 	if (typeof raw === 'string' && raw.trim() !== '') {
-		return formatWeekParam(parseWeekParam(raw.trim()));
+		return formatWeekParam(parseWeekParam(raw.trim(), timeZone));
 	}
-	return formatWeekParam(parseWeekParam(url.searchParams.get('week')));
+	return formatWeekParam(parseWeekParam(url.searchParams.get('week'), timeZone));
 }
 
 export const load: PageServerLoad = async ({ url }) => {
-	const weekStart = parseWeekParam(url.searchParams.get('week'));
-	const { start, end } = getWeekRange(weekStart);
+	const timeZone = getBusinessTimezone();
+	const weekMondayKey = parseWeekParam(url.searchParams.get('week'), timeZone);
+	const { start, end } = getWeekRange(weekMondayKey, timeZone);
 
 	const [appointments, upcomingAppointments] = await Promise.all([
 		db
@@ -51,12 +53,12 @@ export const load: PageServerLoad = async ({ url }) => {
 	]);
 
 	return {
-		weekStart: weekStart.toISOString(),
-		weekParam: formatWeekParam(weekStart),
-		weekDays: getWeekDays(weekStart).map((d) => d.toISOString()),
-		prevWeek: formatWeekParam(addWeeks(weekStart, -1)),
-		nextWeek: formatWeekParam(addWeeks(weekStart, 1)),
-		currentWeek: formatWeekParam(getWeekMonday(new Date())),
+		businessTimezone: timeZone,
+		weekParam: weekMondayKey,
+		weekDays: getWeekDayKeys(weekMondayKey),
+		prevWeek: formatWeekParam(addWeeks(weekMondayKey, -1)),
+		nextWeek: formatWeekParam(addWeeks(weekMondayKey, 1)),
+		currentWeek: formatWeekParam(getWeekMondayKeyFromDate(new Date(), timeZone)),
 		appointments,
 		upcomingAppointments
 	};
@@ -64,9 +66,10 @@ export const load: PageServerLoad = async ({ url }) => {
 
 export const actions: Actions = {
 	cancel: async ({ request, url }) => {
+		const timeZone = getBusinessTimezone();
 		const formData = await request.formData();
 		const appointmentId = formData.get('appointmentId');
-		const week = weekFromForm(formData, url);
+		const week = weekFromForm(formData, url, timeZone);
 
 		if (typeof appointmentId !== 'string' || appointmentId === '') {
 			return fail(400, { message: 'Missing appointment.' });
@@ -86,11 +89,12 @@ export const actions: Actions = {
 	},
 
 	reschedule: async ({ request, url }) => {
+		const timeZone = getBusinessTimezone();
 		const formData = await request.formData();
 		const appointmentId = formData.get('appointmentId');
 		const appointmentDate = formData.get('appointmentDate');
 		const appointmentTime = formData.get('appointmentTime');
-		const week = weekFromForm(formData, url);
+		const week = weekFromForm(formData, url, timeZone);
 
 		if (typeof appointmentId !== 'string' || appointmentId === '') {
 			return fail(400, { message: 'Missing appointment.', appointmentId: null, week });
@@ -109,7 +113,11 @@ export const actions: Actions = {
 			});
 		}
 
-		const startsAtDate = fromDateAndTime(appointmentDate.trim(), appointmentTime.trim());
+		const startsAtDate = wallClockToDate(
+			appointmentDate.trim(),
+			appointmentTime.trim(),
+			timeZone
+		);
 		if (Number.isNaN(startsAtDate.getTime())) {
 			return fail(400, {
 				message: 'Invalid date.',
@@ -149,14 +157,15 @@ export const actions: Actions = {
 			.set({ startsAt: startsAtDate })
 			.where(eq(appointment.id, appointmentId));
 
-		const targetWeek = formatWeekParam(getWeekMonday(startsAtDate));
+		const targetWeek = formatWeekParam(getWeekMondayKeyFromDate(startsAtDate, timeZone));
 		throw redirect(303, `/dashboard?week=${targetWeek}`);
 	},
 
 	sendReminder: async ({ request, url }) => {
+		const timeZone = getBusinessTimezone();
 		const formData = await request.formData();
 		const appointmentId = formData.get('appointmentId');
-		const week = weekFromForm(formData, url);
+		const week = weekFromForm(formData, url, timeZone);
 
 		if (typeof appointmentId !== 'string' || appointmentId === '') {
 			return fail(400, { message: 'Missing appointment.' });

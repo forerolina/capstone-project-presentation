@@ -7,8 +7,7 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	const weekMonday = $derived(new Date(data.weekStart));
-	const weekLabel = $derived(formatWeekLabel(weekMonday));
+	const weekLabel = $derived(formatWeekLabel(data.weekParam, data.businessTimezone));
 	const isCurrentWeek = $derived(data.weekParam === data.currentWeek);
 </script>
 
@@ -71,6 +70,7 @@
 			appointments={data.appointments}
 			upcomingAppointments={data.upcomingAppointments}
 			week={data.weekParam}
+			businessTimezone={data.businessTimezone}
 			{form}
 		/>
 	</section>

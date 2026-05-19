@@ -1,3 +1,5 @@
+import { formatDateTimeInZone } from '$lib/calendar/datetime';
+import { getBusinessTimezone } from '$lib/server/calendar/timezone';
 import { env } from '$env/dynamic/private';
 
 export interface SendBookingConfirmationParams {
@@ -7,7 +9,7 @@ export interface SendBookingConfirmationParams {
 }
 
 function formatWhen(startsAt: Date): string {
-	return startsAt.toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' });
+	return formatDateTimeInZone(startsAt, getBusinessTimezone());
 }
 
 export async function sendBookingConfirmation(
