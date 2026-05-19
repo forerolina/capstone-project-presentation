@@ -9,23 +9,61 @@
 
 	const weekMonday = $derived(new Date(data.weekStart));
 	const weekLabel = $derived(formatWeekLabel(weekMonday));
+	const isCurrentWeek = $derived(data.weekParam === data.currentWeek);
 </script>
 
 <main class="page page--wide">
-	<header class="page-header">
-		<h1>Dashboard</h1>
-		<p>Week view · <a href={resolve('/')}>Back to home</a></p>
+	<header class="page-header page-header--dashboard">
+		<div class="dashboard-top-bar">
+			<nav class="breadcrumb" aria-label="Breadcrumb">
+				<ol>
+					<li><a href={resolve('/')}>Home</a></li>
+					<li><span aria-current="page">Dashboard</span></li>
+				</ol>
+			</nav>
+
+			<form method="post" action="?/signOut" class="dashboard-sign-out" use:enhance>
+				<button type="submit" class="secondary">Sign out</button>
+			</form>
+		</div>
+
+		<div class="dashboard-heading">
+			<h1>Dashboard</h1>
+
+			<nav class="dashboard-week-nav" aria-label="Week navigation">
+				<a
+					href="{resolve('/dashboard')}?week={data.prevWeek}"
+					class="dashboard-week-chevron"
+					aria-label="Previous week"
+				>
+					&lt;
+				</a>
+				<p class="dashboard-week-context">{weekLabel}</p>
+				<a
+					href="{resolve('/dashboard')}?week={data.nextWeek}"
+					class="dashboard-week-chevron"
+					aria-label="Next week"
+				>
+					&gt;
+				</a>
+			</nav>
+
+			{#if !isCurrentWeek}
+				<a
+					href="{resolve('/dashboard')}?week={data.currentWeek}"
+					class="button dashboard-week-today"
+					aria-label="Go to current week"
+				>
+					Today
+				</a>
+			{/if}
+		</div>
+
+		<p class="page-header-tagline">Manage upcoming bookings</p>
 	</header>
 
-	<nav class="calendar-nav" aria-label="Week navigation">
-		<a href="{resolve('/dashboard')}?week={data.prevWeek}">← Previous week</a>
-		<span class="calendar-nav-label">{weekLabel}</span>
-		<a href="{resolve('/dashboard')}?week={data.nextWeek}">Next week →</a>
-		<a href="{resolve('/dashboard')}?week={data.currentWeek}" class="calendar-nav-today">Today</a>
-	</nav>
-
 	<section class="section" aria-labelledby="calendar-heading">
-		<h2 id="calendar-heading" class="section-title">Appointments</h2>
+		<h2 id="calendar-heading" class="visually-hidden">Appointments</h2>
 		<WeekCalendar
 			weekDays={data.weekDays}
 			appointments={data.appointments}
@@ -33,8 +71,4 @@
 			{form}
 		/>
 	</section>
-
-	<form method="post" action="?/signOut" use:enhance>
-		<button type="submit">Sign out</button>
-	</form>
 </main>
