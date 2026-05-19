@@ -25,7 +25,6 @@
 	</header>
 
 	<p class="footer-links">
-		<a href={resolve('/book')}>Book another</a>
-		<a href={resolve('/')}>Home</a>
+		<a href={resolve('/book')}>Book another appointment</a>
 	</p>
 </main>

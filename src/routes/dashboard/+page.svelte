@@ -25,7 +25,7 @@
 		<div class="dashboard-top-bar">
 			<nav class="breadcrumb" aria-label="Breadcrumb">
 				<ol>
-					<li><a href={resolve('/')}>Home</a></li>
+					<li><a href={resolve('/book')}>Book</a></li>
 					<li><span aria-current="page">Dashboard</span></li>
 				</ol>
 			</nav>

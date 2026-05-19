@@ -22,7 +22,7 @@
 			{#if data.isOwner}
 				<a href={resolve('/dashboard')} class="secondary booking-page__owner-link">Dashboard</a>
 			{:else}
-				<a href={resolve('/login')} class="secondary booking-page__owner-link">Business owner login</a>
+				<a href={resolve('/login')} class="secondary booking-page__owner-link">admin login</a>
 			{/if}
 		</div>
 	</header>

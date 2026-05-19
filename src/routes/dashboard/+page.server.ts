@@ -327,6 +327,6 @@ export const actions: Actions = {
 		await auth.api.signOut({
 			headers: event.request.headers
 		});
-		throw redirect(302, '/login');
+		throw redirect(302, '/book');
 	}
 };
