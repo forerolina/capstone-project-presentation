@@ -3,7 +3,6 @@
 		getAppointmentDisplayStatus,
 		getDisplayStatusAccentColor
 	} from '$lib/appointment/display-status';
-	import { formatTimeInZone } from '$lib/calendar/datetime';
 	import { Button, StatusPill } from '$lib/ui';
 
 	export type AppointmentRow = {
@@ -20,25 +19,14 @@
 
 	let {
 		appointment: a,
-		businessTimezone,
 		cardStyle = '',
 		onManage
 	}: {
 		appointment: AppointmentRow;
-		businessTimezone: string;
 		cardStyle?: string;
 		onManage: () => void;
 	} = $props();
 
-	function asDate(value: Date | string): Date {
-		return value instanceof Date ? value : new Date(value);
-	}
-
-	function formatTime(value: Date | string) {
-		return formatTimeInZone(asDate(value), businessTimezone);
-	}
-
-	const startsAt = $derived(asDate(a.startsAt));
 	const pill = $derived(getAppointmentDisplayStatus(a));
 	const accentColor = $derived(getDisplayStatusAccentColor(pill.variant));
 	const isCancelled = $derived(a.status === 'cancelled');
@@ -54,10 +42,11 @@
 		<StatusPill label={pill.label} variant={pill.variant} />
 	</div>
 
-	<p class="calendar-event-meta text-muted">{a.serviceName} · {formatTime(startsAt)}</p>
-
-	<div class="calendar-event-footer">
-		<Button variant="ghost" type="button" onclick={onManage}>Manage</Button>
+	<div class="calendar-event-bottom">
+		<p class="calendar-event-service text-muted">{a.serviceName}</p>
+		<Button variant="tertiary" type="button" class="calendar-event-manage" onclick={onManage}>
+			Manage
+		</Button>
 	</div>
 </li>
 
@@ -66,7 +55,12 @@
 		position: absolute;
 		left: 4px;
 		right: 4px;
-		border-radius: var(--radius-default);
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		padding: 8px 0;
+		box-sizing: border-box;
+		border-radius: var(--radius-xs);
 		border-left: 3px solid var(--event-accent, var(--color-outline));
 		background: var(--glass-bg);
 		backdrop-filter: blur(var(--glass-blur-sm));
@@ -89,7 +83,7 @@
 		justify-content: space-between;
 		align-items: flex-start;
 		gap: 4px;
-		padding: 5px 6px 2px;
+		padding: 0 6px;
 	}
 
 	.calendar-event-name {
@@ -104,18 +98,32 @@
 		min-width: 0;
 	}
 
-	.calendar-event-meta {
+	.calendar-event-bottom {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 4px;
+		padding: 0 6px;
+		min-width: 0;
+	}
+
+	.calendar-event-service {
 		margin: 0;
-		padding: 0 6px 4px;
 		font-size: 0.6875rem;
+		line-height: 1.2;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		flex: 1;
+		min-width: 0;
 	}
 
-	.calendar-event-footer {
-		display: flex;
-		justify-content: flex-end;
-		padding: 2px 6px 5px;
+	.calendar-event-card :global(.calendar-event-manage) {
+		flex-shrink: 0;
+		padding: 0;
+		font-size: 0.6875rem;
+		font-weight: 600;
+		line-height: 1.2;
+		letter-spacing: 0.02em;
 	}
 </style>

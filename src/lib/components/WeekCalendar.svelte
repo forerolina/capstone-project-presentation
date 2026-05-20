@@ -117,7 +117,6 @@
 					{#each dayAppointments as a (a.id)}
 						<AppointmentCard
 							appointment={a}
-							{businessTimezone}
 							cardStyle={cardStyle(a.startsAt)}
 							onManage={() => (managingAppointment = a)}
 						/>
@@ -144,7 +143,7 @@
 <style>
 	.week-calendar {
 		border: var(--ghost-border);
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-xs);
 		overflow: hidden;
 		font-size: 0.8125rem;
 		background: var(--glass-bg);

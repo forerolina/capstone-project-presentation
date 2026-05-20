@@ -88,6 +88,7 @@ typography:
     lineHeight: 20px
     letterSpacing: 0.02em
 rounded:
+  xs: 2px
   sm: 0.5rem
   DEFAULT: 1rem
   md: 1.5rem

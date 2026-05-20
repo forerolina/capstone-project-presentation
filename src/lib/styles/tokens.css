@@ -81,6 +81,7 @@
 	--text-label-md-tracking: 0.02em;
 
 	/* Radius */
+	--radius-xs: 2px;
 	--radius-sm: 0.5rem;
 	--radius-default: 1rem;
 	--radius-md: 1.5rem;
