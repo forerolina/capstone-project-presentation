@@ -2,47 +2,50 @@
 
 ## What I'm building
 
-A web-based appointment booking system that lets clients schedule appointments with a business, handles reminders, and collects payment upfront. It's for small service businesses that need to manage bookings, confirmations, cancellations and reschedules. Clients book without authentication, while the business owner manages everything from a logged-in dashboard.
+A web-based appointment booking system that lets clients schedule appointments with a business, handles reminders, and can collect payment upfront. It's for small service businesses that need to manage bookings, confirmations, cancellations, and reschedules. Clients book without authentication, while the business owner manages everything from a logged-in dashboard.
 
 ## Core features
 
-- **Appointment scheduling & management** — Clients can book appointments through a simple form; business owner can view, reschedule, and cancel in a status-based dashboard (pending / upcoming / completed / cancelled).
-- **Automated reminders & confirmations** — Send email confirmations at booking and reminders before appointments (with personalized details like what to bring).
+- **Appointment scheduling & management** — Clients can book appointments through a simple form; business owner can view, reschedule, cancel, and manually create appointments from a week-view dashboard.
+- **Automated reminders & confirmations** — Send email confirmations at booking and reminders before appointments (with personalized prep notes). Clients can confirm attendance from the reminder email link.
+- **Stripe payment integration** — Stripe Checkout is wired into the schema and webhook handler; activation requires enabling the checkout redirect in the booking flow and setting the price ID.
 
 ## What I'm not building
 
 - **Document uploads** — Too much complexity for MVP; clients can bring documents in person.
-- **Payment collection at booking** — Collect prepayment or partial deposits via card at the time of booking; automatically send receipts.
-- **Apple Pay / Google Pay** — Stick with card-only payments for simplicity; can add more payment methods later.
-- **Analytics dashboard** — Not essential for core functionality; business owner can manage bookings from the calendar view.
+- **Apple Pay / Google Pay** — Stick with card-only payments for simplicity.
+- **Analytics dashboard** — Not essential for core functionality; the calendar view covers day-to-day management.
 
 ## Tech stack
 
-SvelteKit + Drizzle + Neon + Better Auth
+SvelteKit + Drizzle + Neon + Better Auth + Resend + Stripe
 
 ## Sprint 1 — vertical slice
 
 Build a single happy path that cuts through all layers end-to-end:
 
-- Client fills booking form and submits
-- Real Stripe payment is charged
-- Confirmation email is sent to client
-- Rescheduling and cancellation flows
-- Owner sees the appointment in the dashboard
-
-Scope: One appointment type, no reminders yet.
+- ✅ Client fills booking form and submits (service, date, time, contact info)
+- ✅ Slot conflict detection prevents double-booking
+- ✅ Appointment saved to database (`upcoming` status)
+- ✅ Confirmation email sent to client via Resend
+- ✅ Owner sees the appointment in the week-view dashboard
+- ✅ Cancel and reschedule flows from the dashboard
+- ⏳ Stripe Checkout payment at booking time (wired, not yet active)
 
 ## Sprint 2
 
-Once the core flow works end-to-end:
-
-- Automated reminders before appointments
-- Partial deposit option (vs. full prepayment)
-- Full status transitions (pending → upcoming → completed → cancelled)
+- ✅ Owner can manually send reminder emails from the dashboard
+- ✅ Reminder email includes a confirmation link unique to the appointment
+- ✅ Client confirmation page — client clicks link to confirm attendance
+- ✅ Owner can create appointments directly from the dashboard
+- ⏳ Activate Stripe Checkout in the public booking flow
+- ⏳ Automatic (scheduled) reminder sending — currently owner-triggered
+- ⏳ `completed` appointment status (currently: `upcoming` / `cancelled` only)
+- ⏳ Partial deposit option (vs. full prepayment)
 
 ## Nice-to-haves
 
-- Client history & personalization (remember past appointments and preferences)
-- Multi-service or multi-staff management (different service types, assign appointments to staff)
+- Client history and personalization (remember past appointments and preferences)
+- Multi-service or multi-staff management (different service types, assign to staff)
 - Advanced payment options (installment plans, refund policies)
-
+- Automated reminder scheduling (time-based trigger, no manual step)

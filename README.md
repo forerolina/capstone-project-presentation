@@ -1,42 +1,102 @@
-# sv
+# Appointment Booking App
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A web-based appointment booking system for small service businesses. Clients book without creating an account; the business owner manages everything from an authenticated dashboard.
 
-## Creating a project
+## Tech stack
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **Framework** — SvelteKit 5 (Svelte 5 runes, server actions)
+- **Database** — Neon PostgreSQL via Drizzle ORM
+- **Auth** — Better Auth (email + password, owner-only)
+- **Email** — Resend (confirmation and reminder emails)
+- **Payments** — Stripe (wired, not yet active in booking flow)
+- **Deployment** — Netlify (serverless functions adapter)
 
-```sh
-# create a new project
-npx sv create my-app
-```
+## Routes
 
-To recreate this project with the same configuration:
+| Route | Who | What |
+|---|---|---|
+| `/book` | Clients | Book an appointment (no account needed) |
+| `/book/success` | Clients | Post-booking confirmation page |
+| `/confirm` | Clients | Confirm attendance from a reminder email link |
+| `/dashboard` | Owner | Week-view calendar; create, reschedule, cancel, send reminders |
+| `/login` | Owner | Sign in |
+| `/api/stripe/webhook` | Stripe | Webhook handler for checkout payment events |
 
-```sh
-# recreate this project
-pnpm dlx sv@0.15.3 create --template minimal --types ts --add prettier eslint vitest="usages:unit,component" playwright sveltekit-adapter="adapter:netlify" drizzle="database:postgresql+postgresql:neon" better-auth="demo:password" --install pnpm .
-```
+## Local setup
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
+### 1. Install dependencies
 
 ```sh
-npm run build
+pnpm install
 ```
 
-You can preview the production build with `npm run preview`.
+### 2. Configure environment
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+```sh
+cp .env.example .env
+```
+
+Required:
+
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | Neon PostgreSQL connection string |
+| `BETTER_AUTH_SECRET` | Random 32-character secret |
+| `ORIGIN` | Base URL (e.g. `http://localhost:5173`) |
+| `BUSINESS_TIMEZONE` | IANA timezone (e.g. `America/New_York`) |
+
+Optional — email (confirmation + reminders):
+
+| Variable | Description |
+|---|---|
+| `RESEND_API_KEY` | Resend API key |
+| `RESEND_FROM` | Verified sender address |
+| `BUSINESS_NAME` | Shown in email copy |
+| `DEFAULT_SERVICE_NAME` | Fallback service label |
+| `APPOINTMENT_PREP_NOTES` | "What to bring" copy in confirmation emails |
+
+Optional — payments (not yet active in booking flow):
+
+| Variable | Description |
+|---|---|
+| `STRIPE_SECRET_KEY` | Stripe secret key |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `STRIPE_APPOINTMENT_PRICE_ID` | Price ID for the appointment product |
+
+### 3. Run migrations
+
+```sh
+pnpm db:migrate
+```
+
+### 4. Start the dev server
+
+```sh
+pnpm dev
+```
+
+## Database commands
+
+```sh
+pnpm db:generate   # generate migrations from schema changes
+pnpm db:migrate    # apply pending migrations
+pnpm db:push       # push schema directly (dev only)
+pnpm db:studio     # open Drizzle Studio
+```
+
+## Testing
+
+```sh
+pnpm test:unit   # Vitest unit and component tests
+pnpm test:e2e    # Playwright end-to-end tests
+pnpm test        # run both
+```
+
+## Build and deploy
+
+```sh
+pnpm build     # production build via Netlify adapter
+pnpm preview   # preview production build locally
+```
+
+Deploy by pushing to your Netlify-connected branch. Set all required environment variables in the Netlify dashboard under **Site settings → Environment variables**.
