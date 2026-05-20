@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { formatDateTimeInZone } from '$lib/calendar/datetime';
+	import { PageHeader } from '$lib/ui';
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 
@@ -12,17 +13,18 @@
 </script>
 
 <main class="page">
-	<header class="page-header">
-		<h1>Booking confirmed</h1>
+	<PageHeader title="Booking confirmed" borderless>
 		{#if data.appointment}
-			<p>
+			<p class="text-muted">
 				You're set for {formatWhen(data.appointment.startsAt)}. A confirmation email was sent to
 				{data.appointment.clientEmail}.
 			</p>
 		{:else}
-			<p>Your appointment is booked. Check your email for confirmation details.</p>
+			<p class="text-muted">
+				Your appointment is booked. Check your email for confirmation details.
+			</p>
 		{/if}
-	</header>
+	</PageHeader>
 
 	<p class="footer-links">
 		<a href={resolve('/book')}>Book another appointment</a>

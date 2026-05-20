@@ -86,10 +86,7 @@ export const actions: Actions = {
 			.update(appointment)
 			.set({ isConfirmed: true })
 			.where(
-				and(
-					eq(appointment.id, appointmentId),
-					eq(appointment.status, AppointmentStatus.Upcoming)
-				)
+				and(eq(appointment.id, appointmentId), eq(appointment.status, AppointmentStatus.Upcoming))
 			);
 
 		return { confirmed: true, alreadyConfirmed: false };

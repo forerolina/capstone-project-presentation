@@ -3,6 +3,7 @@
 	import AppointmentBookingFields from '$lib/components/AppointmentBookingFields.svelte';
 	import type { AppointmentRow } from '$lib/components/AppointmentCard.svelte';
 	import type { BookingFieldErrors } from '$lib/server/booking/schema';
+	import { Button, Modal } from '$lib/ui';
 
 	type CreateFormState = {
 		createForm?: boolean;
@@ -26,82 +27,61 @@
 		onClose: () => void;
 	} = $props();
 
-	let dialogEl = $state<HTMLDialogElement | null>(null);
 	let selectedSlot = $state<Date | null>(null);
-
-	$effect(() => {
-		const el = dialogEl;
-		if (!el) return;
-		if (!el.open) el.showModal();
-		return () => {
-			if (el.open) el.close();
-		};
-	});
-
-	function close() {
-		onClose();
-	}
-
-	function handleDialogClick(event: MouseEvent) {
-		if (event.target === dialogEl) close();
-	}
 
 	const showFormError = $derived(form?.createForm && form?.message);
 	const fieldErrors = $derived(form?.createForm ? (form?.fieldErrors ?? {}) : {});
 </script>
 
-<dialog
-	bind:this={dialogEl}
-	class="manage-modal"
-	aria-labelledby="create-modal-title"
-	onclick={handleDialogClick}
-	onclose={close}
-	oncancel={(e) => {
-		e.preventDefault();
-		close();
-	}}
->
-	<div class="manage-modal__inner">
-		<header class="manage-modal__header">
-			<h2 id="create-modal-title">Create appointment</h2>
-			<button type="button" class="manage-modal__close secondary" onclick={close} aria-label="Close">
-				×
-			</button>
-		</header>
+<Modal title="Create appointment" titleId="create-modal-title" {onClose}>
+	<form
+		id="create-modal-form"
+		method="post"
+		action="?/create"
+		class="create-modal__form"
+		use:enhance={() => {
+			return async ({ result, update }) => {
+				await update();
+				if (result.type === 'redirect') onClose();
+			};
+		}}
+	>
+		<AppointmentBookingFields
+			idPrefix="create"
+			{upcomingAppointments}
+			{services}
+			{businessTimezone}
+			{fieldErrors}
+			bind:selectedSlot
+		/>
 
-		<form
-			method="post"
-			action="?/create"
-			class="create-modal__form"
-			use:enhance={() => {
-				return async ({ result, update }) => {
-					await update();
-					if (result.type === 'redirect') close();
-				};
-			}}
-		>
-			<AppointmentBookingFields
-				idPrefix="create"
-				{upcomingAppointments}
-				{services}
-				{businessTimezone}
-				{fieldErrors}
-				bind:selectedSlot
-			/>
+		<input type="hidden" name="week" value={week} />
+	</form>
 
-			<input type="hidden" name="week" value={week} />
+	{#snippet footer()}
+		{#if showFormError}
+			<p class="ui-form-message" role="alert">{form?.message}</p>
+		{/if}
+		<Button variant="primary" type="submit" form="create-modal-form" disabled={!selectedSlot}>
+			Create appointment
+		</Button>
+		<Button variant="secondary" type="button" onclick={onClose}>Cancel</Button>
+	{/snippet}
+</Modal>
 
-			<footer class="manage-modal__footer">
-				{#if showFormError}
-					<p class="field-error" role="alert">{form?.message}</p>
-				{/if}
-				<div class="manage-modal__save">
-					<button type="submit" class="button" disabled={!selectedSlot}>Create appointment</button>
-					<button type="button" class="secondary manage-modal__discard" onclick={close}>
-						Cancel
-					</button>
-				</div>
-			</footer>
-		</form>
-	</div>
-</dialog>
+<style>
+	.create-modal__form {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-height: 0;
+	}
+
+	:global(.ui-modal__footer .ui-form-message) {
+		flex: 1 1 100%;
+		margin: 0 0 0.5rem;
+		text-align: left;
+		font-size: var(--text-label-md-size);
+		color: var(--color-on-error-container);
+	}
+</style>

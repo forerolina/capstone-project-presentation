@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import AppointmentBookingFields from '$lib/components/AppointmentBookingFields.svelte';
+	import { Button, Card, PageHeader } from '$lib/ui';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -10,46 +11,94 @@
 	const fieldErrors = $derived(form?.fieldErrors ?? {});
 </script>
 
-<main class="page page--wide booking-page">
-	<div class="booking-page__aurora" aria-hidden="true">
-		<div class="booking-page__aurora-glow"></div>
-	</div>
-
-	<header class="page-header page-header--booking">
-		<div class="booking-page__top-bar">
-			<div class="booking-page__intro">
-				<h1>Book an appointment</h1>
-				<p class="page-header-tagline">
-					Choose a service and time. No account needed — you'll get a confirmation by email.
-				</p>
-			</div>
-			{#if data.isOwner}
-				<a href={resolve('/dashboard')} class="secondary booking-page__owner-link">Dashboard</a>
-			{:else}
-				<a href={resolve('/login')} class="secondary booking-page__owner-link">admin login</a>
-			{/if}
-		</div>
-	</header>
-
-	<form method="post" class="create-modal__form booking-page__form" use:enhance>
-		<div class="booking-page__card manage-modal__inner">
-			<AppointmentBookingFields
-				idPrefix="book"
-				upcomingAppointments={data.upcomingAppointments}
-				services={data.services}
-				businessTimezone={data.businessTimezone}
-				{fieldErrors}
-				bind:selectedSlot
-			/>
-
-			<footer class="manage-modal__footer">
-				{#if form?.message}
-					<p class="field-error" role="alert">{form.message}</p>
+<div class="book-page">
+	<main class="page page--wide book-page__main">
+		<PageHeader title="Book an appointment" borderless>
+			{#snippet actions()}
+				{#if data.isOwner}
+					<Button variant="secondary" href={resolve('/dashboard')}>Dashboard</Button>
+				{:else}
+					<Button variant="secondary" href={resolve('/login')}>admin login</Button>
 				{/if}
-				<div class="manage-modal__save">
-					<button type="submit" class="button" disabled={!selectedSlot}>Book appointment</button>
-				</div>
-			</footer>
-		</div>
-	</form>
-</main>
+			{/snippet}
+			<p class="book-tagline">Choose a service and time. No account needed — you'll get a confirmation by email.</p>
+		</PageHeader>
+
+		<form method="post" class="book-form" use:enhance>
+			<Card>
+				<AppointmentBookingFields
+					idPrefix="book"
+					upcomingAppointments={data.upcomingAppointments}
+					services={data.services}
+					businessTimezone={data.businessTimezone}
+					{fieldErrors}
+					bind:selectedSlot
+				/>
+
+				<footer class="book-form__footer">
+					{#if form?.message}
+						<p class="ui-form-message" role="alert">{form.message}</p>
+					{/if}
+					<Button variant="primary" type="submit" disabled={!selectedSlot}>Book appointment</Button>
+				</footer>
+			</Card>
+		</form>
+	</main>
+</div>
+
+<style>
+	.book-page {
+		position: relative;
+		z-index: 1;
+		min-height: 100vh;
+	}
+
+	.book-page__main {
+		position: relative;
+		z-index: 1;
+	}
+
+	.book-page :global(.ui-page-header h1) {
+		color: #ffffff;
+	}
+
+	.book-page :global(.book-tagline) {
+		margin: 0;
+		font-size: var(--text-body-md-size);
+		color: rgba(255, 255, 255, 0.7);
+	}
+
+	.book-form {
+		max-width: min(960px, 100%);
+		margin: 0 auto;
+	}
+
+	:global(.book-form .ui-card) {
+		display: flex;
+		flex-direction: column;
+		max-height: none;
+	}
+
+	:global(.book-form .booking-panel) {
+		min-height: min(420px, 70vh);
+	}
+
+	.book-form__footer {
+		display: flex;
+		flex-shrink: 0;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.5rem;
+		padding: 1rem 1.25rem;
+		border-top: var(--ghost-border);
+	}
+
+	.book-form__footer .ui-form-message {
+		flex: 1 1 100%;
+		margin: 0 0 0.5rem;
+		text-align: left;
+		font-size: var(--text-label-md-size);
+		color: var(--color-on-error-container);
+	}
+</style>

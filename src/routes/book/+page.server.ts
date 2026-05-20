@@ -24,10 +24,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			and(
 				eq(appointment.status, AppointmentStatus.Upcoming),
 				gte(appointment.startsAt, new Date()),
-				lt(
-					appointment.startsAt,
-					new Date(Date.now() + UPCOMING_WINDOW_DAYS * MS_PER_DAY)
-				)
+				lt(appointment.startsAt, new Date(Date.now() + UPCOMING_WINDOW_DAYS * MS_PER_DAY))
 			)
 		)
 		.orderBy(asc(appointment.startsAt));
@@ -81,10 +78,7 @@ export const actions: Actions = {
 				and(
 					eq(appointment.status, AppointmentStatus.Upcoming),
 					gte(appointment.startsAt, new Date()),
-					lt(
-						appointment.startsAt,
-						new Date(Date.now() + UPCOMING_WINDOW_DAYS * MS_PER_DAY)
-					)
+					lt(appointment.startsAt, new Date(Date.now() + UPCOMING_WINDOW_DAYS * MS_PER_DAY))
 				)
 			);
 

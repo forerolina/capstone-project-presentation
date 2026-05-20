@@ -15,10 +15,7 @@ import { canSendAppointmentReminder } from '$lib/appointment/display-status';
 import { isSlotAvailable } from '$lib/server/appointment/slots';
 import { AppointmentStatus } from '$lib/server/appointment/status';
 import { auth } from '$lib/server/auth';
-import {
-	ownerCreateFormSchema,
-	type BookingFieldErrors
-} from '$lib/server/booking/schema';
+import { ownerCreateFormSchema, type BookingFieldErrors } from '$lib/server/booking/schema';
 import { getBusinessTimezone } from '$lib/server/calendar/timezone';
 import { db } from '$lib/server/db';
 import { appointment } from '$lib/server/db/schema';
@@ -93,10 +90,7 @@ export const actions: Actions = {
 			.update(appointment)
 			.set({ status: AppointmentStatus.Cancelled })
 			.where(
-				and(
-					eq(appointment.id, appointmentId),
-					eq(appointment.status, AppointmentStatus.Upcoming)
-				)
+				and(eq(appointment.id, appointmentId), eq(appointment.status, AppointmentStatus.Upcoming))
 			);
 
 		throw redirect(303, `/dashboard?week=${week}`);
@@ -127,11 +121,7 @@ export const actions: Actions = {
 			});
 		}
 
-		const startsAtDate = wallClockToDate(
-			appointmentDate.trim(),
-			appointmentTime.trim(),
-			timeZone
-		);
+		const startsAtDate = wallClockToDate(appointmentDate.trim(), appointmentTime.trim(), timeZone);
 		if (Number.isNaN(startsAtDate.getTime())) {
 			return fail(400, {
 				message: 'Invalid date.',
@@ -184,8 +174,7 @@ export const actions: Actions = {
 		const parsed = ownerCreateFormSchema.safeParse({
 			clientName: formData.get('clientName'),
 			clientEmail: formData.get('clientEmail'),
-			clientPhone:
-				typeof phoneRaw === 'string' && phoneRaw.trim() !== '' ? phoneRaw : undefined,
+			clientPhone: typeof phoneRaw === 'string' && phoneRaw.trim() !== '' ? phoneRaw : undefined,
 			serviceName: formData.get('serviceName'),
 			appointmentDate: formData.get('appointmentDate'),
 			appointmentTime: formData.get('appointmentTime')
@@ -230,10 +219,7 @@ export const actions: Actions = {
 				and(
 					eq(appointment.status, AppointmentStatus.Upcoming),
 					gte(appointment.startsAt, new Date()),
-					lt(
-						appointment.startsAt,
-						new Date(Date.now() + UPCOMING_WINDOW_DAYS * MS_PER_DAY)
-					)
+					lt(appointment.startsAt, new Date(Date.now() + UPCOMING_WINDOW_DAYS * MS_PER_DAY))
 				)
 			);
 

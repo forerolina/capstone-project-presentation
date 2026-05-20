@@ -61,15 +61,15 @@ export function getAppointmentDisplayStatus(
 export function getDisplayStatusAccentColor(variant: DisplayStatusVariant): string {
 	switch (variant) {
 		case 'scheduled':
-			return '#94a3b8';
+			return 'var(--status-scheduled)';
 		case 'reminder':
-			return '#f59e0b';
+			return 'var(--status-reminder)';
 		case 'pending':
-			return '#3b82f6';
+			return 'var(--status-pending)';
 		case 'confirmed':
-			return '#10b981';
+			return 'var(--status-confirmed)';
 		case 'cancelled':
-			return '#9ca3af';
+			return 'var(--status-cancelled)';
 	}
 }
 
