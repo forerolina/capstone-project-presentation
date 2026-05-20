@@ -11,6 +11,10 @@
 </script>
 
 <main class="page page--wide booking-page">
+	<div class="booking-page__aurora" aria-hidden="true">
+		<div class="booking-page__aurora-glow"></div>
+	</div>
+
 	<header class="page-header page-header--booking">
 		<div class="booking-page__top-bar">
 			<div class="booking-page__intro">
