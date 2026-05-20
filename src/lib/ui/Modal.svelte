@@ -81,6 +81,8 @@
 		display: flex;
 		flex-direction: column;
 		max-height: min(90vh, 720px);
+		background: var(--color-surface-container-lowest);
+		box-shadow: var(--shadow-modal);
 	}
 
 	.ui-modal__header {
@@ -99,6 +101,8 @@
 	}
 
 	.ui-modal__body {
+		display: flex;
+		flex-direction: column;
 		flex: 1;
 		min-height: 0;
 		overflow: hidden;
@@ -113,6 +117,6 @@
 		gap: 0.5rem;
 		padding: 1rem 1.25rem;
 		border-top: var(--ghost-border);
-		background: var(--glass-bg);
+		background: var(--color-surface-container-low);
 	}
 </style>

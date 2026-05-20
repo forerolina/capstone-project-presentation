@@ -18,6 +18,7 @@
 	}
 
 	:global(.booking-panel__col) {
+		min-height: 0;
 		padding: 1rem 1.25rem;
 		overflow-y: auto;
 		border-right: var(--ghost-border);

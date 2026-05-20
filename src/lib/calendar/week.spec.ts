@@ -6,6 +6,8 @@ import {
 	getWeekMondayKey,
 	getWeekRange,
 	isSameDateKey,
+	isWorkingDay,
+	nextWorkingDayKey,
 	parseWeekParam
 } from './week';
 
@@ -36,5 +38,16 @@ describe('week calendar helpers', () => {
 		const evening = wallClockToDate('2026-05-12', '17:30', TZ);
 		expect(isSameDateKey(morning, '2026-05-12', TZ)).toBe(true);
 		expect(isSameDateKey(evening, '2026-05-12', TZ)).toBe(true);
+	});
+
+	it('isWorkingDay is true Monday–Friday and false on weekends', () => {
+		expect(isWorkingDay('2026-05-11')).toBe(true); // Monday
+		expect(isWorkingDay('2026-05-15')).toBe(true); // Friday
+		expect(isWorkingDay('2026-05-16')).toBe(false); // Saturday
+		expect(isWorkingDay('2026-05-17')).toBe(false); // Sunday
+	});
+
+	it('nextWorkingDayKey advances from Saturday to Monday', () => {
+		expect(nextWorkingDayKey('2026-05-16')).toBe('2026-05-18');
 	});
 });

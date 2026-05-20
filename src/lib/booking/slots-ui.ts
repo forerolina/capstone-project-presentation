@@ -4,7 +4,7 @@ import {
 	wallClockToDate,
 	type DateKey
 } from '$lib/calendar/datetime';
-import { weekdayFromDateKey } from '$lib/calendar/week';
+import { isWorkingDay, weekdayFromDateKey } from '$lib/calendar/week';
 import type { AppointmentRow } from '$lib/components/AppointmentCard.svelte';
 
 export const MS_PER_HOUR = 60 * 60 * 1000;
@@ -31,6 +31,8 @@ export function getAvailableSlots(
 	businessTimezone: string,
 	excludeId?: string
 ): Date[] {
+	if (!isWorkingDay(dayKey)) return [];
+
 	const now = new Date();
 	const slots: Date[] = [];
 

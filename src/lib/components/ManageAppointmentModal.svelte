@@ -156,36 +156,35 @@
 							<Button variant="primary" type="submit">Send reminder</Button>
 						</form>
 					{:else}
-						<Button variant="primary" type="button" disabled>
+						<Button variant="secondary" type="button" disabled>
 							{pill.variant === 'scheduled' ? 'Send reminder' : 'Reminder sent'}
 						</Button>
 					{/if}
-				</div>
 
-				{#if cancelConfirming}
-					<div class="manage-cancel-confirm" role="alert">
-						<p>Cancel this appointment? This cannot be undone.</p>
-						<div class="manage-cancel-confirm-actions">
-							<form method="post" action="?/cancel" use:enhance>
-								<input type="hidden" name="appointmentId" value={appointment.id} />
-								<input type="hidden" name="week" value={week} />
-								<Button variant="primary" type="submit">Yes, cancel</Button>
-							</form>
-							<Button variant="secondary" type="button" onclick={() => (cancelConfirming = false)}>
-								Keep appointment
-							</Button>
+					{#if cancelConfirming}
+						<div class="manage-cancel-confirm" role="alert">
+							<p>Cancel this appointment? This cannot be undone.</p>
+							<div class="manage-cancel-confirm-actions">
+								<form method="post" action="?/cancel" use:enhance>
+									<input type="hidden" name="appointmentId" value={appointment.id} />
+									<input type="hidden" name="week" value={week} />
+									<Button variant="primary" type="submit">Yes, cancel</Button>
+								</form>
+								<Button variant="secondary" type="button" onclick={() => (cancelConfirming = false)}>
+									Keep appointment
+								</Button>
+							</div>
 						</div>
-					</div>
-				{:else}
-					<Button
-						variant="secondary"
-						type="button"
-						class="manage-cancel-trigger-wide"
-						onclick={() => (cancelConfirming = true)}
-					>
-						Cancel appointment
-					</Button>
-				{/if}
+					{:else}
+						<Button
+							variant="secondary"
+							type="button"
+							onclick={() => (cancelConfirming = true)}
+						>
+							Cancel appointment
+						</Button>
+					{/if}
+				</div>
 			{/if}
 		</section>
 
@@ -202,14 +201,14 @@
 			/>
 		</section>
 
-		<div class="booking-panel__col">
+		<section class="booking-panel__col" aria-label="Available times">
 			<SlotPicker
 				slots={availableSlots}
 				bind:selectedSlot
 				{businessTimezone}
 				dayLabel={selectedDayLabel}
 			/>
-		</div>
+		</section>
 	</BookingPanel>
 
 	{#snippet footer()}
@@ -274,17 +273,19 @@
 		margin: 0.15rem 0 0;
 	}
 
+	.manage-client-actions {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin-top: 1rem;
+	}
+
 	.manage-client-actions :global(form),
 	.manage-client-actions :global(.ui-btn) {
 		width: 100%;
 	}
 
-	:global(.manage-cancel-trigger-wide) {
-		width: 100%;
-	}
-
 	.manage-cancel-confirm {
-		margin-top: 0.75rem;
 		padding: 0.75rem;
 		border: var(--ghost-border);
 		border-radius: var(--radius-default);

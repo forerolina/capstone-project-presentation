@@ -12,6 +12,22 @@ export function weekdayFromDateKey(dateKey: DateKey): number {
 	return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
 }
 
+/** Monday–Friday (UTC weekday from date key). Saturday and Sunday are non-working. */
+export function isWorkingDay(dateKey: DateKey): boolean {
+	const weekday = weekdayFromDateKey(dateKey);
+	return weekday !== 0 && weekday !== 6;
+}
+
+/** Next working day on or after `dateKey` (returns `dateKey` when already a working day). */
+export function nextWorkingDayKey(dateKey: DateKey, maxDays = 7): DateKey {
+	let key = dateKey;
+	for (let i = 0; i < maxDays; i++) {
+		if (isWorkingDay(key)) return key;
+		key = addDaysToDateKey(key, 1);
+	}
+	return dateKey;
+}
+
 /** Monday date key (YYYY-MM-DD) for the week containing `dateKey`. */
 export function getWeekMondayKey(dateKey: DateKey): DateKey {
 	const weekday = weekdayFromDateKey(dateKey);

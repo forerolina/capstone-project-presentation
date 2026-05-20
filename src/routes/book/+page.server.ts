@@ -3,6 +3,7 @@ import { and, asc, eq, gte, lt } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 import { BOOKING_SERVICES } from '$lib/booking/services';
 import { wallClockToDate } from '$lib/calendar/datetime';
+import { isWorkingDay } from '$lib/calendar/week';
 import { isSlotAvailable } from '$lib/server/appointment/slots';
 import { AppointmentStatus } from '$lib/server/appointment/status';
 import { getBusinessTimezone } from '$lib/server/calendar/timezone';
@@ -59,6 +60,13 @@ export const actions: Actions = {
 
 		const { clientName, clientEmail, clientPhone, serviceName, appointmentDate, appointmentTime } =
 			parsed.data;
+
+		if (!isWorkingDay(appointmentDate)) {
+			return fail(400, {
+				message: 'Appointments are only available Monday–Friday.',
+				fieldErrors: { appointmentDate: ['Choose a weekday.'] } as BookingFieldErrors
+			});
+		}
 
 		const startsAtDate = wallClockToDate(appointmentDate, appointmentTime, timeZone);
 		if (Number.isNaN(startsAtDate.getTime())) {

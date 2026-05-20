@@ -15,6 +15,7 @@
 	} from '$lib/booking/slots-ui';
 	import type { AppointmentRow } from '$lib/components/AppointmentCard.svelte';
 	import type { BookingFieldErrors } from '$lib/server/booking/schema';
+	import { nextWorkingDayKey } from '$lib/calendar/week';
 	import { BookingPanel, Field, MonthPicker, SlotPicker } from '$lib/ui';
 
 	let {
@@ -33,7 +34,7 @@
 		selectedSlot?: Date | null;
 	} = $props();
 
-	const initialDayKey = todayKeyInZone(businessTimezone);
+	const initialDayKey = nextWorkingDayKey(todayKeyInZone(businessTimezone));
 	let viewMonthKey = $state(monthStartKey(initialDayKey));
 	let selectedDateKey = $state(initialDayKey);
 

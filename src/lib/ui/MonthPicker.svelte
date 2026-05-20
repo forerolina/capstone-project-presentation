@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { wallClockToDate, type DateKey } from '$lib/calendar/datetime';
+	import { isWorkingDay } from '$lib/calendar/week';
 	import Button from './Button.svelte';
 
 	let {
@@ -26,12 +27,16 @@
 		return dayKey < todayKey;
 	}
 
+	function isUnavailableDay(dayKey: DateKey): boolean {
+		return isPastDay(dayKey) || !isWorkingDay(dayKey);
+	}
+
 	function isCurrentMonth(dayKey: DateKey): boolean {
 		return dayKey.slice(0, 7) === viewMonthKey.slice(0, 7);
 	}
 
 	function selectDay(dayKey: DateKey) {
-		if (isPastDay(dayKey)) return;
+		if (isUnavailableDay(dayKey)) return;
 		selectedDateKey = dayKey;
 	}
 
@@ -46,6 +51,7 @@
 			}
 		);
 		if (isPastDay(dayKey)) return `${dateLabel}, unavailable`;
+		if (!isWorkingDay(dayKey)) return `${dateLabel}, closed`;
 		if (!isCurrentMonth(dayKey)) return `${dateLabel}, outside current month`;
 		return dateLabel;
 	}
@@ -81,6 +87,8 @@
 			{#each monthGridDayKeys as dayKey (dayKey)}
 				{@const inMonth = isCurrentMonth(dayKey)}
 				{@const past = isPastDay(dayKey)}
+				{@const closed = !isWorkingDay(dayKey)}
+				{@const unavailable = past || closed}
 				{@const selected = dayKey === selectedDateKey}
 				{@const today = dayKey === todayKey}
 				<button
@@ -88,11 +96,11 @@
 					role="gridcell"
 					class="month-picker__day"
 					class:month-picker__day--outside={!inMonth}
-					class:month-picker__day--past={past}
+					class:month-picker__day--past={unavailable}
 					class:month-picker__day--selected={selected}
 					class:month-picker__day--today={today}
-					disabled={past}
-					aria-disabled={past ? 'true' : undefined}
+					disabled={unavailable}
+					aria-disabled={unavailable ? 'true' : undefined}
 					aria-label={formatDayAriaLabel(dayKey)}
 					aria-selected={selected}
 					aria-current={today ? 'date' : undefined}

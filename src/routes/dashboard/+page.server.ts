@@ -9,6 +9,7 @@ import {
 	getWeekDayKeys,
 	getWeekMondayKeyFromDate,
 	getWeekRange,
+	isWorkingDay,
 	parseWeekParam
 } from '$lib/calendar/week';
 import { canSendAppointmentReminder } from '$lib/appointment/display-status';
@@ -121,7 +122,16 @@ export const actions: Actions = {
 			});
 		}
 
-		const startsAtDate = wallClockToDate(appointmentDate.trim(), appointmentTime.trim(), timeZone);
+		const dateKey = appointmentDate.trim();
+		if (!isWorkingDay(dateKey)) {
+			return fail(400, {
+				message: 'Appointments are only available Monday–Friday.',
+				appointmentId,
+				week
+			});
+		}
+
+		const startsAtDate = wallClockToDate(dateKey, appointmentTime.trim(), timeZone);
 		if (Number.isNaN(startsAtDate.getTime())) {
 			return fail(400, {
 				message: 'Invalid date.',
@@ -192,6 +202,15 @@ export const actions: Actions = {
 
 		const { clientName, clientEmail, clientPhone, serviceName, appointmentDate, appointmentTime } =
 			parsed.data;
+
+		if (!isWorkingDay(appointmentDate)) {
+			return fail(400, {
+				createForm: true,
+				message: 'Appointments are only available Monday–Friday.',
+				fieldErrors: { appointmentDate: ['Choose a weekday.'] } as BookingFieldErrors,
+				week
+			});
+		}
 
 		const startsAtDate = wallClockToDate(appointmentDate, appointmentTime, timeZone);
 		if (Number.isNaN(startsAtDate.getTime())) {
