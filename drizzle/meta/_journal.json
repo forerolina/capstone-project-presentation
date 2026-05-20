@@ -50,6 +50,20 @@
       "when": 1778724000000,
       "tag": "0006_drop_hidden_from_dashboard",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778725000000,
+      "tag": "0007_is_confirmed_default_false",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778726000000,
+      "tag": "0008_drop_stripe_payment",
+      "breakpoints": true
     }
   ]
 }

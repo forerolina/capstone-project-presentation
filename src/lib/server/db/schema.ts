@@ -1,4 +1,4 @@
-import { pgTable, boolean, integer, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, boolean, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import type { AppointmentStatus } from '$lib/server/appointment/status';
 
 export const appointment = pgTable('appointment', {
@@ -11,10 +11,6 @@ export const appointment = pgTable('appointment', {
 	isConfirmed: boolean('is_confirmed').notNull().default(false),
 	reminderSentAt: timestamp('reminder_sent_at', { withTimezone: true }),
 	status: text('status').notNull().$type<AppointmentStatus>(),
-	stripeCheckoutSessionId: text('stripe_checkout_session_id').unique(),
-	stripePaymentIntentId: text('stripe_payment_intent_id'),
-	amountCents: integer('amount_cents'),
-	currency: text('currency').default('usd'),
 	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 });
 

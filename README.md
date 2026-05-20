@@ -8,7 +8,6 @@ A web-based appointment booking system for small service businesses. Clients boo
 - **Database** — Neon PostgreSQL via Drizzle ORM
 - **Auth** — Better Auth (email + password, owner-only)
 - **Email** — Resend (confirmation and reminder emails)
-- **Payments** — Stripe (wired, not yet active in booking flow)
 - **Deployment** — Netlify (serverless functions adapter)
 
 ## Routes
@@ -20,7 +19,6 @@ A web-based appointment booking system for small service businesses. Clients boo
 | `/confirm` | Clients | Confirm attendance from a reminder email link |
 | `/dashboard` | Owner | Week-view calendar; create, reschedule, cancel, send reminders |
 | `/login` | Owner | Sign in |
-| `/api/stripe/webhook` | Stripe | Webhook handler for checkout payment events |
 
 ## Local setup
 
@@ -54,14 +52,6 @@ Optional — email (confirmation + reminders):
 | `BUSINESS_NAME` | Shown in email copy |
 | `DEFAULT_SERVICE_NAME` | Fallback service label |
 | `APPOINTMENT_PREP_NOTES` | "What to bring" copy in confirmation emails |
-
-Optional — payments (not yet active in booking flow):
-
-| Variable | Description |
-|---|---|
-| `STRIPE_SECRET_KEY` | Stripe secret key |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
-| `STRIPE_APPOINTMENT_PRICE_ID` | Price ID for the appointment product |
 
 ### 3. Run migrations
 
