@@ -41,7 +41,7 @@ Required:
 |---|---|
 | `DATABASE_URL` | Neon PostgreSQL connection string |
 | `BETTER_AUTH_SECRET` | Random 32-character secret |
-| `ORIGIN` | Base URL (e.g. `http://localhost:5173`) |
+| `ORIGIN` | Base URL (e.g. `http://localhost:<port>`) |
 | `BUSINESS_TIMEZONE` | IANA timezone (e.g. `America/New_York`) |
 
 Optional — email (confirmation + reminders):
