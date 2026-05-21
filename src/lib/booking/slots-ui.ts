@@ -1,6 +1,7 @@
 import {
 	addDaysToDateKey,
 	dateKeyFromDate,
+	wallClockHour,
 	wallClockToDate,
 	type DateKey
 } from '$lib/calendar/datetime';
@@ -11,6 +12,34 @@ export const MS_PER_MINUTE = 60 * 1000;
 export const SLOT_GRID_MINUTES = 15;
 export const CALENDAR_START = 8;
 export const CALENDAR_END = 20;
+
+export type SlotPeriod = 'morning' | 'afternoon' | 'evening';
+
+export interface GroupedSlotsByPeriod {
+	morning: Date[];
+	afternoon: Date[];
+	evening: Date[];
+}
+
+export function groupSlotsByPeriod(
+	slots: Date[],
+	businessTimezone: string
+): GroupedSlotsByPeriod {
+	const grouped: GroupedSlotsByPeriod = { morning: [], afternoon: [], evening: [] };
+
+	for (const slot of slots) {
+		const hour = wallClockHour(slot, businessTimezone);
+		if (hour < 12) {
+			grouped.morning.push(slot);
+		} else if (hour < 17) {
+			grouped.afternoon.push(slot);
+		} else {
+			grouped.evening.push(slot);
+		}
+	}
+
+	return grouped;
+}
 
 export function monthStartKey(dateKey: DateKey): DateKey {
 	return `${dateKey.slice(0, 7)}-01`;

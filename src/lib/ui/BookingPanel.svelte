@@ -11,10 +11,15 @@
 <style>
 	.booking-panel {
 		display: grid;
-		grid-template-columns: minmax(140px, 1fr) minmax(220px, 1.2fr) minmax(200px, 1fr);
+		grid-template-columns: minmax(140px, 0.9fr) minmax(200px, 1.1fr) minmax(280px, 1.4fr);
 		flex: 1;
 		min-height: 0;
-		overflow: hidden;
+	}
+
+	@media (min-width: 64rem) {
+		.booking-panel {
+			grid-template-columns: minmax(140px, 0.85fr) minmax(200px, 1fr) minmax(320px, 1.6fr);
+		}
 	}
 
 	:global(.booking-panel__col) {
