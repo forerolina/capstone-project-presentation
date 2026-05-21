@@ -28,7 +28,19 @@
 		{/snippet}
 
 		{#snippet actions()}
-			<form method="post" action="?/signOut" use:enhance class="dashboard-sign-out">
+			<div class="dashboard-header-actions dashboard-header-actions--wide">
+				<Button
+					variant="secondary"
+					href={resolve('/dashboard/services')}
+					class="dashboard-header-services">Services</Button
+				>
+				<form method="post" action="?/signOut" use:enhance class="dashboard-sign-out">
+					<Button variant="secondary" type="submit" class="dashboard-header-sign-out"
+						>Sign out</Button
+					>
+				</form>
+			</div>
+			<form method="post" action="?/signOut" use:enhance class="dashboard-sign-out dashboard-header-actions--narrow">
 				<Button variant="secondary" type="submit" class="dashboard-header-sign-out"
 					>Sign out</Button
 				>
@@ -46,11 +58,13 @@
 						</ol>
 					</nav>
 				</div>
-				<Button
-					variant="secondary"
-					href={resolve('/dashboard/services')}
-					class="dashboard-header-services">Services</Button
-				>
+				<div class="dashboard-toolbar__services-slot">
+					<Button
+						variant="secondary"
+						href={resolve('/dashboard/services')}
+						class="dashboard-toolbar__services">Services</Button
+					>
+				</div>
 			</div>
 
 			<div class="dashboard-toolbar__week">
@@ -127,11 +141,28 @@
 		margin-left: auto;
 	}
 
+	.dashboard-header-actions {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 0.5rem;
+	}
+
+	.dashboard-header-actions--wide {
+		display: none;
+	}
+
+	.dashboard-header-actions--narrow {
+		display: block;
+	}
+
 	.dashboard-sign-out {
 		margin: 0;
 	}
 
-	:global(.dashboard-header-sign-out) {
+	:global(.dashboard-header-sign-out),
+	:global(.dashboard-header-services) {
 		white-space: nowrap;
 	}
 
@@ -161,16 +192,15 @@
 		gap: 1rem;
 	}
 
+	.dashboard-toolbar__services-slot {
+		flex-shrink: 0;
+	}
+
 	.dashboard-toolbar__intro {
 		display: flex;
 		flex-direction: column;
 		gap: 0.25rem;
 		min-width: 0;
-	}
-
-	:global(.dashboard-header-services) {
-		flex-shrink: 0;
-		white-space: nowrap;
 	}
 
 	.dashboard-toolbar__tagline {
@@ -196,13 +226,53 @@
 		pointer-events: none;
 	}
 
-	@media (max-width: 48rem) {
+	@media (min-width: 48rem) {
+		:global(.page--wide .ui-page-header) {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			grid-template-rows: auto auto;
+			align-items: start;
+			column-gap: 1.5rem;
+			row-gap: 0.75rem;
+		}
+
+		:global(.page--wide .ui-page-header__main) {
+			grid-column: 1 / -1;
+			grid-row: 1;
+		}
+
+		.dashboard-header-actions--wide {
+			display: flex;
+		}
+
+		.dashboard-header-actions--narrow {
+			display: none;
+		}
+
+		.dashboard-toolbar__services-slot {
+			display: none;
+		}
+
+		.dashboard-toolbar {
+			grid-column: 1 / -1;
+			grid-row: 2;
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			flex-wrap: nowrap;
+			gap: 1rem 2rem;
+			margin-top: 0;
+		}
+
 		.dashboard-toolbar__meta {
-			align-items: flex-start;
+			flex: 0 1 auto;
+			justify-content: flex-start;
 		}
 
 		.dashboard-toolbar__week {
 			justify-content: flex-end;
+			flex: 0 0 auto;
+			margin-left: auto;
 		}
 	}
 </style>
