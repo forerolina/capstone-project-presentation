@@ -49,10 +49,16 @@ Optional — email (confirmation + reminders):
 | Variable | Description |
 |---|---|
 | `RESEND_API_KEY` | Resend API key |
-| `RESEND_FROM` | Verified sender address |
+| `RESEND_FROM` | Sender on a **verified domain** (see below) |
 | `BUSINESS_NAME` | Shown in email copy |
 | `DEFAULT_SERVICE_NAME` | Fallback service label |
 | `APPOINTMENT_PREP_NOTES` | "What to bring" copy in confirmation emails |
+
+Emails are sent to each appointment’s **client email**. Resend’s test sender (`onboarding@resend.dev`) only delivers to the email on your Resend account — not to clients. To reach real clients:
+
+1. Add and verify your domain at [resend.com/domains](https://resend.com/domains)
+2. Set `RESEND_FROM` to an address on that domain (e.g. `Studio <hello@yourdomain.com>`)
+3. Use the same values in Netlify for production
 
 ### 3. Run migrations
 

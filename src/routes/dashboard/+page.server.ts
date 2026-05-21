@@ -343,7 +343,7 @@ export const actions: Actions = {
 		const week = weekFromForm(formData, url, timeZone);
 
 		if (typeof appointmentId !== 'string' || appointmentId === '') {
-			return fail(400, { message: 'Missing appointment.' });
+			return fail(400, { message: 'Missing appointment.', appointmentId: null });
 		}
 
 		const [row] = await db
@@ -353,11 +353,14 @@ export const actions: Actions = {
 			.limit(1);
 
 		if (!row) {
-			return fail(404, { message: 'Appointment not found.' });
+			return fail(404, { message: 'Appointment not found.', appointmentId });
 		}
 
 		if (row.status === AppointmentStatus.Cancelled) {
-			return fail(400, { message: 'Cannot send reminder for a cancelled appointment.' });
+			return fail(400, {
+				message: 'Cannot send reminder for a cancelled appointment.',
+				appointmentId
+			});
 		}
 
 		if (row.reminderSentAt) {
@@ -366,16 +369,23 @@ export const actions: Actions = {
 
 		if (!canSendAppointmentReminder(row)) {
 			return fail(400, {
-				message: 'Reminders can only be sent when the appointment status is Send reminder.'
+				message: 'Reminders can only be sent when the appointment status is Send reminder.',
+				appointmentId
 			});
 		}
 
-		await sendAppointmentReminder({
-			to: row.clientEmail,
-			clientName: row.clientName,
-			startsAt: row.startsAt,
-			confirmUrl: getConfirmUrl(row.id, url.origin)
-		});
+		try {
+			await sendAppointmentReminder({
+				to: row.clientEmail,
+				clientName: row.clientName,
+				startsAt: row.startsAt,
+				confirmUrl: getConfirmUrl(row.id, url.origin)
+			});
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : 'Could not send reminder email.';
+			return fail(400, { message, appointmentId });
+		}
 
 		await db
 			.update(appointment)

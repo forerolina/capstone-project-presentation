@@ -8,6 +8,64 @@ export interface SendBookingConfirmationParams {
 	startsAt: Date;
 }
 
+function getResendConfig(): { apiKey: string; from: string } {
+	const apiKey = env.RESEND_API_KEY?.trim();
+	const from = env.RESEND_FROM?.trim();
+	if (!apiKey || !from) {
+		throw new Error(
+			'Email is not configured. Set RESEND_API_KEY and RESEND_FROM in your environment.'
+		);
+	}
+	return { apiKey, from };
+}
+
+/** User-facing message from a Resend API error response. */
+export function formatResendError(status: number, body: string): string {
+	try {
+		const data = JSON.parse(body) as { message?: string };
+		const apiMessage = data.message?.trim();
+		if (
+			status === 403 &&
+			apiMessage?.toLowerCase().includes('only send testing emails')
+		) {
+			return (
+				'Resend test mode only delivers to your account email. To email clients, verify a domain at resend.com/domains and set RESEND_FROM to an address on that domain (not onboarding@resend.dev).'
+			);
+		}
+		if (apiMessage) return apiMessage;
+	} catch {
+		// use raw body below
+	}
+	return body.trim() || `Email failed (${status})`;
+}
+
+async function sendResendEmail(params: {
+	to: string;
+	subject: string;
+	text: string;
+}): Promise<void> {
+	const { apiKey, from } = getResendConfig();
+
+	const res = await fetch('https://api.resend.com/emails', {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${apiKey}`,
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({
+			from,
+			to: params.to,
+			subject: params.subject,
+			text: params.text
+		})
+	});
+
+	if (!res.ok) {
+		const body = await res.text();
+		throw new Error(formatResendError(res.status, body));
+	}
+}
+
 function formatWhen(startsAt: Date): string {
 	return formatDateTimeInZone(startsAt, getBusinessTimezone());
 }
@@ -15,16 +73,8 @@ function formatWhen(startsAt: Date): string {
 export async function sendBookingConfirmation(
 	params: SendBookingConfirmationParams
 ): Promise<void> {
-	const key = env.RESEND_API_KEY;
-	const from = env.RESEND_FROM;
 	const businessName = env.BUSINESS_NAME ?? 'Our business';
 	const prepNotes = env.APPOINTMENT_PREP_NOTES?.trim();
-
-	if (!key || !from) {
-		console.warn('RESEND_API_KEY or RESEND_FROM not set; skipping confirmation email');
-		return;
-	}
-
 	const when = formatWhen(params.startsAt);
 
 	const lines = [
@@ -41,24 +91,11 @@ export async function sendBookingConfirmation(
 
 	lines.push('', 'Thank you,', businessName);
 
-	const res = await fetch('https://api.resend.com/emails', {
-		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${key}`,
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({
-			from,
-			to: params.to,
-			subject: `Appointment confirmed — ${businessName}`,
-			text: lines.join('\n')
-		})
+	await sendResendEmail({
+		to: params.to,
+		subject: `Appointment confirmed — ${businessName}`,
+		text: lines.join('\n')
 	});
-
-	if (!res.ok) {
-		const body = await res.text();
-		throw new Error(`Resend failed: ${res.status} ${body}`);
-	}
 }
 
 export interface SendAppointmentReminderParams {
@@ -71,16 +108,8 @@ export interface SendAppointmentReminderParams {
 export async function sendAppointmentReminder(
 	params: SendAppointmentReminderParams
 ): Promise<void> {
-	const key = env.RESEND_API_KEY;
-	const from = env.RESEND_FROM;
 	const businessName = env.BUSINESS_NAME ?? 'Our business';
 	const prepNotes = env.APPOINTMENT_PREP_NOTES?.trim();
-
-	if (!key || !from) {
-		console.warn('RESEND_API_KEY or RESEND_FROM not set; skipping reminder email');
-		return;
-	}
-
 	const when = formatWhen(params.startsAt);
 
 	const lines = [
@@ -100,22 +129,9 @@ export async function sendAppointmentReminder(
 
 	lines.push('', 'Thank you,', businessName);
 
-	const res = await fetch('https://api.resend.com/emails', {
-		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${key}`,
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({
-			from,
-			to: params.to,
-			subject: `Appointment reminder — ${businessName}`,
-			text: lines.join('\n')
-		})
+	await sendResendEmail({
+		to: params.to,
+		subject: `Appointment reminder — ${businessName}`,
+		text: lines.join('\n')
 	});
-
-	if (!res.ok) {
-		const body = await res.text();
-		throw new Error(`Resend failed: ${res.status} ${body}`);
-	}
 }
