@@ -9,19 +9,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary:               #00677f;
-      --primary-container:     #00d1ff;
-      --on-primary:            #ffffff;
-      --secondary:             #9f4212;
-      --secondary-container:   #fd8955;
-      --tertiary:              #00696d;
-      --tertiary-container:    #51d2d8;
-      --surface:               #f7f9fb;
-      --on-surface:            #191c1e;
-      --on-surface-variant:    #3c494e;
-      --outline:               #6c797f;
-      --outline-variant:       #bbc9cf;
-      --inverse-primary:       #4cd6ff;
+      --primary:            #00677f;
+      --primary-container:  #00d1ff;
+      --tertiary:           #00696d;
+      --surface:            #f7f9fb;
+      --on-surface:         #191c1e;
+      --on-surface-variant: #3c494e;
+      --outline:            #6c797f;
+      --outline-variant:    #bbc9cf;
       --font: 'Hanken Grotesk', system-ui, sans-serif;
     }
 
@@ -68,7 +63,6 @@
       transform: translateX(48px);
       transition: opacity .45s cubic-bezier(.4,0,.2,1), transform .45s cubic-bezier(.4,0,.2,1);
       pointer-events: none;
-      will-change: transform, opacity;
     }
     .slide.active   { opacity: 1; transform: translateX(0); pointer-events: auto; }
     .slide.exit-left { opacity: 0; transform: translateX(-48px); }
@@ -146,7 +140,7 @@
       margin-bottom: 2.25rem;
     }
     .headline .light { font-weight: 300; }
-    .headline .accent {
+    .accent {
       background: linear-gradient(120deg,var(--primary) 0%,var(--primary-container) 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -636,10 +630,9 @@
 
   function goTo(idx) {
     if (idx < 0 || idx >= slides.length) return;
-    const dir = idx > cur ? 1 : -1;
 
     slides[cur].classList.remove('active');
-    if (dir < 0) slides[cur].classList.add('exit-left');
+    if (idx < cur) slides[cur].classList.add('exit-left');
     setTimeout(() => slides[cur].classList.remove('exit-left'), 480);
 
     cur = idx;
