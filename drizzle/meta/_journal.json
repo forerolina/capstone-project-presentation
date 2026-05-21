@@ -64,6 +64,20 @@
       "when": 1778726000000,
       "tag": "0008_drop_stripe_payment",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1778727000000,
+      "tag": "0009_services_catalog",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778728000000,
+      "tag": "0010_sync_appointment_service_names",
+      "breakpoints": true
     }
   ]
 }

@@ -12,6 +12,7 @@
 		autocomplete,
 		error,
 		control = 'input',
+		value = $bindable(''),
 		children
 	}: {
 		label: string;
@@ -23,6 +24,7 @@
 		autocomplete?: import('svelte/elements').HTMLInputAttributes['autocomplete'];
 		error?: string | string[];
 		control?: 'input' | 'select';
+		value?: string;
 		children?: Snippet;
 	} = $props();
 
@@ -45,6 +47,7 @@
 			{id}
 			{name}
 			{required}
+			bind:value
 			invalid={hasError}
 			describedBy={hasError ? errorId : undefined}
 		>
@@ -57,6 +60,7 @@
 			inputType={inputType as 'text'}
 			{required}
 			{autocomplete}
+			bind:value
 			invalid={hasError}
 			describedBy={hasError ? errorId : undefined}
 		/>

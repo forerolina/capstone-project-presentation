@@ -1,11 +1,14 @@
 <script lang="ts">
 	import {
-		formatTimeInZone,
 		toDateInputValue,
 		toTimeInputValue,
 		wallClockToDate,
 		type DateKey
 	} from '$lib/calendar/datetime';
+	import {
+		formatDurationMinutes,
+		type BookingServiceOption
+	} from '$lib/booking/service-catalog';
 	import {
 		getAvailableSlots,
 		getMonthGridDayKeys,
@@ -24,13 +27,15 @@
 		services,
 		businessTimezone,
 		fieldErrors = {},
+		selectedServiceId = $bindable(''),
 		selectedSlot = $bindable(null)
 	}: {
 		idPrefix: string;
 		upcomingAppointments: AppointmentRow[];
-		services: string[];
+		services: BookingServiceOption[];
 		businessTimezone: string;
 		fieldErrors?: BookingFieldErrors;
+		selectedServiceId?: string;
 		selectedSlot?: Date | null;
 	} = $props();
 
@@ -39,6 +44,8 @@
 	let selectedDateKey = $state(initialDayKey);
 
 	const todayKey = $derived(todayKeyInZone(businessTimezone));
+	const selectedService = $derived(services.find((s) => s.id === selectedServiceId) ?? null);
+	const slotDurationMinutes = $derived(selectedService?.durationMinutes ?? 60);
 
 	const monthLabel = $derived(
 		wallClockToDate(viewMonthKey, '12:00', businessTimezone).toLocaleDateString(undefined, {
@@ -49,7 +56,14 @@
 	);
 	const monthGridDayKeys = $derived(getMonthGridDayKeys(viewMonthKey));
 	const availableSlots = $derived(
-		getAvailableSlots(selectedDateKey, upcomingAppointments, businessTimezone)
+		selectedService
+			? getAvailableSlots(
+					selectedDateKey,
+					upcomingAppointments,
+					businessTimezone,
+					slotDurationMinutes
+				)
+			: []
 	);
 
 	const selectedDayLabel = $derived(
@@ -63,6 +77,7 @@
 
 	$effect(() => {
 		selectedDateKey;
+		selectedServiceId;
 		if (selectedSlot && availableSlots.some((s) => s.getTime() === selectedSlot!.getTime())) {
 			return;
 		}
@@ -105,15 +120,18 @@
 
 		<Field
 			label="Service"
-			id="{idPrefix}-serviceName"
-			name="serviceName"
+			id="{idPrefix}-serviceId"
+			name="serviceId"
 			control="select"
 			required
-			error={fieldErrors.serviceName}
+			error={fieldErrors.serviceId}
+			bind:value={selectedServiceId}
 		>
-			<option value="" disabled selected>Select…</option>
-			{#each services as service (service)}
-				<option value={service}>{service}</option>
+			<option value="" disabled>Select…</option>
+			{#each services as service (service.id)}
+				<option value={service.id}>
+					{service.name} · {formatDurationMinutes(service.durationMinutes)}
+				</option>
 			{/each}
 		</Field>
 	</section>

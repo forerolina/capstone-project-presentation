@@ -19,6 +19,7 @@
 		todayKeyInZone
 	} from '$lib/booking/slots-ui';
 	import type { AppointmentRow } from '$lib/components/AppointmentCard.svelte';
+	import { formatDurationMinutes } from '$lib/booking/service-catalog';
 	import { BookingPanel, Button, Modal, MonthPicker, SlotPicker, StatusPill } from '$lib/ui';
 
 	type FormState = {
@@ -71,8 +72,15 @@
 		})
 	);
 	const monthGridDayKeys = $derived(getMonthGridDayKeys(viewMonthKey));
+	const rescheduleDurationMinutes = $derived(appointment.durationMinutes ?? 60);
 	const availableSlots = $derived(
-		getAvailableSlots(selectedDateKey, upcomingAppointments, businessTimezone, appointment.id)
+		getAvailableSlots(
+			selectedDateKey,
+			upcomingAppointments,
+			businessTimezone,
+			rescheduleDurationMinutes,
+			appointment.id
+		)
 	);
 	const pill = $derived(getAppointmentDisplayStatus(appointment));
 	const hasChanges = $derived(
@@ -122,7 +130,9 @@
 	<BookingPanel>
 		<section class="booking-panel__col" aria-label="Client details">
 			<h3 class="booking-panel__col-title">{appointment.clientName}</h3>
-			<p class="manage-client-service text-muted">{appointment.serviceName}</p>
+			<p class="manage-client-service text-muted">
+				{appointment.serviceName} · {formatDurationMinutes(appointment.durationMinutes)}
+			</p>
 
 			<dl class="manage-client-details">
 				<div>

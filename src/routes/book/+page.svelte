@@ -7,8 +7,10 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
+	let selectedServiceId = $state('');
 	let selectedSlot = $state<Date | null>(null);
 	const fieldErrors = $derived(form?.fieldErrors ?? {});
+	const canSubmit = $derived(Boolean(selectedSlot && selectedServiceId && data.services.length > 0));
 </script>
 
 <div class="book-page">
@@ -24,25 +26,32 @@
 			<p class="book-tagline">Choose a service and time. No account needed — you'll get a confirmation by email.</p>
 		</PageHeader>
 
-		<form method="post" class="book-form" use:enhance>
+		{#if data.services.length === 0}
 			<Card>
-				<AppointmentBookingFields
-					idPrefix="book"
-					upcomingAppointments={data.upcomingAppointments}
-					services={data.services}
-					businessTimezone={data.businessTimezone}
-					{fieldErrors}
-					bind:selectedSlot
-				/>
-
-				<footer class="book-form__footer">
-					{#if form?.message}
-						<p class="ui-form-message" role="alert">{form.message}</p>
-					{/if}
-					<Button variant="primary" type="submit" disabled={!selectedSlot}>Book appointment</Button>
-				</footer>
+				<p class="book-empty text-muted">Online booking is not available yet. Please contact the business.</p>
 			</Card>
-		</form>
+		{:else}
+			<form method="post" class="book-form" use:enhance>
+				<Card>
+					<AppointmentBookingFields
+						idPrefix="book"
+						upcomingAppointments={data.upcomingAppointments}
+						services={data.services}
+						businessTimezone={data.businessTimezone}
+						{fieldErrors}
+						bind:selectedServiceId
+						bind:selectedSlot
+					/>
+
+					<footer class="book-form__footer">
+						{#if form?.message}
+							<p class="ui-form-message" role="alert">{form.message}</p>
+						{/if}
+						<Button variant="primary" type="submit" disabled={!canSubmit}>Book appointment</Button>
+					</footer>
+				</Card>
+			</form>
+		{/if}
 	</main>
 </div>
 

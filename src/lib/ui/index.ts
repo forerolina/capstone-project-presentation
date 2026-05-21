@@ -4,6 +4,7 @@ export { default as Button } from './Button.svelte';
 export { default as Card } from './Card.svelte';
 export { default as Chip } from './Chip.svelte';
 export { default as Field } from './Field.svelte';
+export { default as HeaderAddButton } from './HeaderAddButton.svelte';
 export { default as Input } from './Input.svelte';
 export { default as Modal } from './Modal.svelte';
 export { default as MonthPicker } from './MonthPicker.svelte';

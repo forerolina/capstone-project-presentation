@@ -18,6 +18,7 @@ A web-based appointment booking system for small service businesses. Clients boo
 | `/book/success` | Clients | Post-booking confirmation page |
 | `/confirm` | Clients | Confirm attendance from a reminder email link |
 | `/dashboard` | Owner | Week-view calendar; create, reschedule, cancel, send reminders |
+| `/dashboard/services` | Owner | Manage bookable services and durations |
 | `/login` | Owner | Sign in |
 
 ## Local setup

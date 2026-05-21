@@ -1,7 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { and, asc, eq, gte, lt } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
-import { BOOKING_SERVICES } from '$lib/booking/services';
 import { wallClockToDate } from '$lib/calendar/datetime';
 import { isWorkingDay } from '$lib/calendar/week';
 import { isSlotAvailable } from '$lib/server/appointment/slots';
@@ -11,6 +10,7 @@ import { bookingFormSchema, type BookingFieldErrors } from '$lib/server/booking/
 import { db } from '$lib/server/db';
 import { appointment } from '$lib/server/db/schema';
 import { sendBookingConfirmation } from '$lib/server/email';
+import { getServiceById, listServices } from '$lib/server/service';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const UPCOMING_WINDOW_DAYS = 90;
@@ -18,20 +18,23 @@ const UPCOMING_WINDOW_DAYS = 90;
 export const load: PageServerLoad = async ({ locals }) => {
 	const timeZone = getBusinessTimezone();
 
-	const upcomingAppointments = await db
-		.select()
-		.from(appointment)
-		.where(
-			and(
-				eq(appointment.status, AppointmentStatus.Upcoming),
-				gte(appointment.startsAt, new Date()),
-				lt(appointment.startsAt, new Date(Date.now() + UPCOMING_WINDOW_DAYS * MS_PER_DAY))
+	const [upcomingAppointments, services] = await Promise.all([
+		db
+			.select()
+			.from(appointment)
+			.where(
+				and(
+					eq(appointment.status, AppointmentStatus.Upcoming),
+					gte(appointment.startsAt, new Date()),
+					lt(appointment.startsAt, new Date(Date.now() + UPCOMING_WINDOW_DAYS * MS_PER_DAY))
+				)
 			)
-		)
-		.orderBy(asc(appointment.startsAt));
+			.orderBy(asc(appointment.startsAt)),
+		listServices()
+	]);
 
 	return {
-		services: [...BOOKING_SERVICES],
+		services,
 		businessTimezone: timeZone,
 		upcomingAppointments,
 		isOwner: Boolean(locals.user)
@@ -48,7 +51,7 @@ export const actions: Actions = {
 			clientName: formData.get('clientName'),
 			clientEmail: formData.get('clientEmail'),
 			clientPhone: typeof phoneRaw === 'string' && phoneRaw.trim() !== '' ? phoneRaw : undefined,
-			serviceName: formData.get('serviceName'),
+			serviceId: formData.get('serviceId'),
 			appointmentDate: formData.get('appointmentDate'),
 			appointmentTime: formData.get('appointmentTime')
 		});
@@ -58,8 +61,16 @@ export const actions: Actions = {
 			return fail(400, { fieldErrors, message: 'Please fix the form.' });
 		}
 
-		const { clientName, clientEmail, clientPhone, serviceName, appointmentDate, appointmentTime } =
+		const { clientName, clientEmail, clientPhone, serviceId, appointmentDate, appointmentTime } =
 			parsed.data;
+
+		const selectedService = await getServiceById(serviceId);
+		if (!selectedService) {
+			return fail(400, {
+				message: 'Please choose a valid service.',
+				fieldErrors: { serviceId: ['Please choose a service'] } as BookingFieldErrors
+			});
+		}
 
 		if (!isWorkingDay(appointmentDate)) {
 			return fail(400, {
@@ -90,7 +101,14 @@ export const actions: Actions = {
 				)
 			);
 
-		if (!isSlotAvailable(startsAtDate, upcomingForSlots)) {
+		if (
+			!isSlotAvailable(
+				startsAtDate,
+				selectedService.durationMinutes,
+				upcomingForSlots,
+				undefined
+			)
+		) {
 			return fail(400, {
 				message: 'That time is no longer available. Pick another slot.',
 				fieldErrors: {} as BookingFieldErrors
@@ -104,7 +122,9 @@ export const actions: Actions = {
 				clientEmail,
 				clientPhone: clientPhone ?? null,
 				startsAt: startsAtDate,
-				serviceName,
+				serviceId: selectedService.id,
+				serviceName: selectedService.name,
+				durationMinutes: selectedService.durationMinutes,
 				isConfirmed: false,
 				reminderSentAt: null,
 				status: AppointmentStatus.Upcoming

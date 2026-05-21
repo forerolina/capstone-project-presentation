@@ -50,11 +50,12 @@
 			.sort((a, b) => asDate(a.startsAt).getTime() - asDate(b.startsAt).getTime());
 	}
 
-	function cardStyle(startsAt: Date | string): string {
+	function cardStyle(startsAt: Date | string, durationMinutes: number): string {
 		const d = asDate(startsAt);
 		const hour = wallClockHour(d, businessTimezone) + wallClockMinute(d, businessTimezone) / 60;
 		const top = (hour - CALENDAR_START) * HOUR_HEIGHT;
-		return `top: ${top}px; height: ${HOUR_HEIGHT}px;`;
+		const height = (durationMinutes / 60) * HOUR_HEIGHT;
+		return `top: ${top}px; height: ${height}px;`;
 	}
 
 	function formatHourLabel(hour: number): string {
@@ -117,7 +118,7 @@
 					{#each dayAppointments as a (a.id)}
 						<AppointmentCard
 							appointment={a}
-							cardStyle={cardStyle(a.startsAt)}
+							cardStyle={cardStyle(a.startsAt, a.durationMinutes)}
 							onManage={() => (managingAppointment = a)}
 						/>
 					{/each}

@@ -1,7 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { and, asc, eq, gte, lt } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
-import { BOOKING_SERVICES } from '$lib/booking/services';
 import { wallClockToDate } from '$lib/calendar/datetime';
 import {
 	addWeeks,
@@ -22,6 +21,7 @@ import { db } from '$lib/server/db';
 import { appointment } from '$lib/server/db/schema';
 import { getConfirmUrl } from '$lib/server/appointment/confirm-token';
 import { sendAppointmentReminder, sendBookingConfirmation } from '$lib/server/email';
+import { getServiceById, listServices, syncAppointmentServiceNames } from '$lib/server/service';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const UPCOMING_WINDOW_DAYS = 90;
@@ -35,10 +35,12 @@ function weekFromForm(formData: FormData, url: URL, timeZone: string): string {
 }
 
 export const load: PageServerLoad = async ({ url }) => {
+	await syncAppointmentServiceNames();
+
 	const timeZone = getBusinessTimezone();
 	const weekMondayKey = parseWeekParam(url.searchParams.get('week'), timeZone);
 	const { start, end } = getWeekRange(weekMondayKey, timeZone);
-	const [appointments, upcomingAppointments] = await Promise.all([
+	const [appointments, upcomingAppointments, services] = await Promise.all([
 		db
 			.select()
 			.from(appointment)
@@ -60,7 +62,8 @@ export const load: PageServerLoad = async ({ url }) => {
 					lt(appointment.startsAt, new Date(Date.now() + UPCOMING_WINDOW_DAYS * MS_PER_DAY))
 				)
 			)
-			.orderBy(asc(appointment.startsAt))
+			.orderBy(asc(appointment.startsAt)),
+		listServices()
 	]);
 
 	return {
@@ -72,7 +75,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		currentWeek: formatWeekParam(getWeekMondayKeyFromDate(new Date(), timeZone)),
 		appointments,
 		upcomingAppointments,
-		services: [...BOOKING_SERVICES]
+		services
 	};
 };
 
@@ -166,6 +169,32 @@ export const actions: Actions = {
 			});
 		}
 
+		const upcomingForSlots = await db
+			.select()
+			.from(appointment)
+			.where(
+				and(
+					eq(appointment.status, AppointmentStatus.Upcoming),
+					gte(appointment.startsAt, new Date()),
+					lt(appointment.startsAt, new Date(Date.now() + UPCOMING_WINDOW_DAYS * MS_PER_DAY))
+				)
+			);
+
+		if (
+			!isSlotAvailable(
+				startsAtDate,
+				row.durationMinutes,
+				upcomingForSlots,
+				appointmentId
+			)
+		) {
+			return fail(400, {
+				message: 'That time is no longer available. Pick another slot.',
+				appointmentId,
+				week
+			});
+		}
+
 		await db
 			.update(appointment)
 			.set({ startsAt: startsAtDate })
@@ -185,7 +214,7 @@ export const actions: Actions = {
 			clientName: formData.get('clientName'),
 			clientEmail: formData.get('clientEmail'),
 			clientPhone: typeof phoneRaw === 'string' && phoneRaw.trim() !== '' ? phoneRaw : undefined,
-			serviceName: formData.get('serviceName'),
+			serviceId: formData.get('serviceId'),
 			appointmentDate: formData.get('appointmentDate'),
 			appointmentTime: formData.get('appointmentTime')
 		});
@@ -200,8 +229,18 @@ export const actions: Actions = {
 			});
 		}
 
-		const { clientName, clientEmail, clientPhone, serviceName, appointmentDate, appointmentTime } =
+		const { clientName, clientEmail, clientPhone, serviceId, appointmentDate, appointmentTime } =
 			parsed.data;
+
+		const selectedService = await getServiceById(serviceId);
+		if (!selectedService) {
+			return fail(400, {
+				createForm: true,
+				message: 'Please choose a valid service.',
+				fieldErrors: { serviceId: ['Please choose a service'] } as BookingFieldErrors,
+				week
+			});
+		}
 
 		if (!isWorkingDay(appointmentDate)) {
 			return fail(400, {
@@ -242,7 +281,14 @@ export const actions: Actions = {
 				)
 			);
 
-		if (!isSlotAvailable(startsAtDate, upcomingForSlots)) {
+		if (
+			!isSlotAvailable(
+				startsAtDate,
+				selectedService.durationMinutes,
+				upcomingForSlots,
+				undefined
+			)
+		) {
 			return fail(400, {
 				createForm: true,
 				message: 'That time is no longer available. Pick another slot.',
@@ -258,7 +304,9 @@ export const actions: Actions = {
 				clientEmail,
 				clientPhone: clientPhone ?? null,
 				startsAt: startsAtDate,
-				serviceName,
+				serviceId: selectedService.id,
+				serviceName: selectedService.name,
+				durationMinutes: selectedService.durationMinutes,
 				isConfirmed: false,
 				reminderSentAt: null,
 				status: AppointmentStatus.Upcoming

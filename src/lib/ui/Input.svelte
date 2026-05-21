@@ -10,7 +10,7 @@
 		inputType = 'text',
 		required = false,
 		autocomplete,
-		value,
+		value = $bindable(''),
 		invalid = false,
 		describedBy,
 		selectProps,
@@ -22,7 +22,7 @@
 		inputType?: HTMLInputAttributes['type'];
 		required?: boolean;
 		autocomplete?: HTMLInputAttributes['autocomplete'];
-		value?: string;
+		value?: string | undefined;
 		invalid?: boolean;
 		describedBy?: string;
 		selectProps?: HTMLSelectAttributes;
@@ -36,6 +36,7 @@
 			{id}
 			{name}
 			{required}
+			bind:value
 			aria-invalid={invalid ? 'true' : undefined}
 			aria-describedby={describedBy}
 			{...selectProps}
@@ -49,7 +50,7 @@
 			type={inputType}
 			{required}
 			{autocomplete}
-			{value}
+			bind:value
 			aria-invalid={invalid ? 'true' : undefined}
 			aria-describedby={describedBy}
 		/>

@@ -3,6 +3,7 @@
 		getAppointmentDisplayStatus,
 		getDisplayStatusAccentColor
 	} from '$lib/appointment/display-status';
+	import { formatDurationMinutes } from '$lib/booking/service-catalog';
 	import { Button, StatusPill } from '$lib/ui';
 
 	export type AppointmentRow = {
@@ -12,6 +13,7 @@
 		clientPhone: string | null;
 		startsAt: Date | string;
 		serviceName: string;
+		durationMinutes: number;
 		isConfirmed: boolean;
 		status: string;
 		reminderSentAt: Date | string | null;
@@ -30,20 +32,34 @@
 	const pill = $derived(getAppointmentDisplayStatus(a));
 	const accentColor = $derived(getDisplayStatusAccentColor(pill.variant));
 	const isCancelled = $derived(a.status === 'cancelled');
+	const isCompact = $derived(a.durationMinutes <= 30);
+	const isVeryCompact = $derived(a.durationMinutes <= 15);
+	const cardLabel = $derived(
+		`${a.clientName}, ${a.serviceName}, ${formatDurationMinutes(a.durationMinutes)}, ${pill.label}`
+	);
 </script>
 
 <li
 	class="calendar-event-card"
 	class:calendar-event-card--cancelled={isCancelled}
+	class:calendar-event-card--compact={isCompact}
+	class:calendar-event-card--compact-15={isVeryCompact}
 	style="{cardStyle}; --event-accent: {accentColor};"
+	aria-label={cardLabel}
+	title={isCompact ? cardLabel : undefined}
 >
 	<div class="calendar-event-header">
 		<p class="calendar-event-name">{a.clientName}</p>
 		<StatusPill label={pill.label} variant={pill.variant} />
 	</div>
 
-	<div class="calendar-event-bottom">
-		<p class="calendar-event-service text-muted">{a.serviceName}</p>
+	<div class="calendar-event-body">
+		<p class="calendar-event-service text-muted">
+			<span class="calendar-event-service-name">{a.serviceName}</span>
+			<span class="calendar-event-service-meta">
+				{' · '}{formatDurationMinutes(a.durationMinutes)}
+			</span>
+		</p>
 		<Button variant="tertiary" type="button" class="calendar-event-manage" onclick={onManage}>
 			Manage
 		</Button>
@@ -84,6 +100,7 @@
 		align-items: flex-start;
 		gap: 4px;
 		padding: 0 6px;
+		flex-shrink: 0;
 	}
 
 	.calendar-event-name {
@@ -98,13 +115,14 @@
 		min-width: 0;
 	}
 
-	.calendar-event-bottom {
+	.calendar-event-body {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		gap: 4px;
 		padding: 0 6px;
 		min-width: 0;
+		flex-shrink: 0;
 	}
 
 	.calendar-event-service {
@@ -125,5 +143,63 @@
 		font-weight: 600;
 		line-height: 1.2;
 		letter-spacing: 0.02em;
+	}
+
+	/* 15–30 min only: service + manage; status via accent border + tint */
+	.calendar-event-card--compact {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		gap: 4px;
+		padding: 2px 0;
+		border-left-width: 4px;
+		background: color-mix(in srgb, var(--event-accent) 14%, var(--glass-bg));
+	}
+
+	.calendar-event-card--compact.calendar-event-card--cancelled {
+		background: color-mix(in srgb, var(--event-accent) 10%, var(--color-surface-container));
+	}
+
+	.calendar-event-card--compact .calendar-event-header {
+		display: none;
+	}
+
+	.calendar-event-card--compact .calendar-event-body {
+		flex: 1;
+		min-height: 0;
+		padding: 0 6px;
+	}
+
+	.calendar-event-card--compact .calendar-event-service {
+		font-weight: 600;
+		color: var(--color-on-surface);
+	}
+
+	.calendar-event-card--compact .calendar-event-service-meta {
+		display: none;
+	}
+
+	.calendar-event-card--compact :global(.calendar-event-manage) {
+		font-size: 0.625rem;
+	}
+
+	.calendar-event-card--compact-15 {
+		padding: 0;
+		border-left-width: 3px;
+	}
+
+	.calendar-event-card--compact-15 .calendar-event-body {
+		padding: 0 4px;
+		gap: 2px;
+	}
+
+	.calendar-event-card--compact-15 .calendar-event-service {
+		font-size: 0.5625rem;
+		line-height: 1;
+	}
+
+	.calendar-event-card--compact-15 :global(.calendar-event-manage) {
+		font-size: 0.5625rem;
+		line-height: 1;
 	}
 </style>

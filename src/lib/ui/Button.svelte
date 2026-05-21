@@ -112,7 +112,12 @@
 		border: var(--ghost-border);
 	}
 
-	.ui-btn--secondary:hover:not(:disabled),
+	.ui-btn--secondary:hover:not(:disabled) {
+		background: var(--color-surface-container-lowest);
+		border: var(--ghost-border-strong);
+		box-shadow: 0 2px 12px rgba(0, 103, 127, 0.14);
+	}
+
 	.ui-btn--ghost:hover:not(:disabled) {
 		background: var(--glass-bg-hover);
 		border-color: rgba(25, 28, 30, 0.18);

@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import AppointmentBookingFields from '$lib/components/AppointmentBookingFields.svelte';
 	import type { AppointmentRow } from '$lib/components/AppointmentCard.svelte';
+	import type { BookingServiceOption } from '$lib/booking/service-catalog';
 	import type { BookingFieldErrors } from '$lib/server/booking/schema';
 	import { Button, Modal } from '$lib/ui';
 
@@ -20,13 +21,14 @@
 		onClose
 	}: {
 		upcomingAppointments: AppointmentRow[];
-		services: string[];
+		services: BookingServiceOption[];
 		week: string;
 		businessTimezone: string;
 		form?: CreateFormState;
 		onClose: () => void;
 	} = $props();
 
+	let selectedServiceId = $state('');
 	let selectedSlot = $state<Date | null>(null);
 
 	const showFormError = $derived(form?.createForm && form?.message);
@@ -52,6 +54,7 @@
 			{services}
 			{businessTimezone}
 			{fieldErrors}
+			bind:selectedServiceId
 			bind:selectedSlot
 		/>
 
@@ -62,7 +65,12 @@
 		{#if showFormError}
 			<p class="ui-form-message" role="alert">{form?.message}</p>
 		{/if}
-		<Button variant="primary" type="submit" form="create-modal-form" disabled={!selectedSlot}>
+		<Button
+			variant="primary"
+			type="submit"
+			form="create-modal-form"
+			disabled={!selectedServiceId || !selectedSlot}
+		>
 			Create appointment
 		</Button>
 		<Button variant="secondary" type="button" onclick={onClose}>Cancel</Button>

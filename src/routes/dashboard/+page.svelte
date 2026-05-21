@@ -4,7 +4,7 @@
 	import CreateAppointmentModal from '$lib/components/CreateAppointmentModal.svelte';
 	import WeekCalendar from '$lib/components/WeekCalendar.svelte';
 	import { formatWeekLabel } from '$lib/calendar/week';
-	import { Button, PageHeader } from '$lib/ui';
+	import { Button, HeaderAddButton, PageHeader } from '$lib/ui';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -24,21 +24,16 @@
 <main class="page page--wide">
 	<PageHeader title="Dashboard" borderless>
 		{#snippet titleAddon()}
-			<button
-				type="button"
-				class="dashboard-new-appointment"
-				aria-label="New appointment"
-				onclick={() => (showCreateModal = true)}
-			>
-				<span class="dashboard-new-appointment__icon" aria-hidden="true">+</span>
-				<span class="dashboard-new-appointment__label">New appointment</span>
-			</button>
+			<HeaderAddButton label="New appointment" onclick={() => (showCreateModal = true)} />
 		{/snippet}
 
 		{#snippet actions()}
-			<form method="post" action="?/signOut" use:enhance class="dashboard-sign-out">
-				<Button variant="secondary" type="submit">Sign out</Button>
-			</form>
+			<div class="dashboard-header-actions">
+				<Button variant="secondary" href={resolve('/dashboard/services')}>Services</Button>
+				<form method="post" action="?/signOut" use:enhance class="dashboard-sign-out">
+					<Button variant="secondary" type="submit">Sign out</Button>
+				</form>
+			</div>
 		{/snippet}
 
 		<div class="dashboard-toolbar">
@@ -113,6 +108,12 @@
 		align-items: center;
 	}
 
+	.dashboard-header-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
 	.dashboard-sign-out {
 		margin: 0;
 	}
@@ -159,66 +160,6 @@
 		align-items: center;
 		gap: 1rem 1.5rem;
 		flex-shrink: 0;
-	}
-
-	.dashboard-new-appointment {
-		position: relative;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		flex-shrink: 0;
-		width: 2.25rem;
-		height: 2.25rem;
-		padding: 0;
-		border: none;
-		border-radius: var(--radius-full);
-		background: var(--gradient-primary);
-		color: var(--color-on-primary);
-		font: inherit;
-		cursor: pointer;
-		box-shadow: 0 2px 12px rgba(0, 103, 127, 0.25);
-	}
-
-	.dashboard-new-appointment:focus-visible {
-		outline: none;
-		box-shadow: var(--focus-ring);
-	}
-
-	.dashboard-new-appointment:hover {
-		filter: brightness(1.05);
-	}
-
-	.dashboard-new-appointment__icon {
-		font-size: 1.375rem;
-		font-weight: 300;
-		line-height: 1;
-	}
-
-	.dashboard-new-appointment__label {
-		position: absolute;
-		top: calc(100% + 0.4rem);
-		left: 50%;
-		z-index: 1;
-		padding: 0.35rem 0.55rem;
-		border-radius: var(--radius-sm);
-		background: var(--color-inverse-surface);
-		color: var(--color-inverse-on-surface);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		line-height: 1.2;
-		white-space: nowrap;
-		pointer-events: none;
-		opacity: 0;
-		transform: translateX(-50%) translateY(-2px);
-		transition:
-			opacity 0.15s ease,
-			transform 0.15s ease;
-	}
-
-	.dashboard-new-appointment:hover .dashboard-new-appointment__label,
-	.dashboard-new-appointment:focus-visible .dashboard-new-appointment__label {
-		opacity: 1;
-		transform: translateX(-50%) translateY(0);
 	}
 
 	:global(.dashboard-week-today--current) {
