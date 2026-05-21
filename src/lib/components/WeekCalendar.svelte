@@ -2,7 +2,12 @@
 	import AppointmentCard, { type AppointmentRow } from '$lib/components/AppointmentCard.svelte';
 	import ManageAppointmentModal from '$lib/components/ManageAppointmentModal.svelte';
 	import { wallClockHour, wallClockMinute, wallClockToDate } from '$lib/calendar/datetime';
-	import { dayOfMonthFromDateKey, isSameDateKey, type DateKey } from '$lib/calendar/week';
+	import {
+		dayOfMonthFromDateKey,
+		isSameDateKey,
+		isWorkingDay,
+		type DateKey
+	} from '$lib/calendar/week';
 
 	type FormState = {
 		message?: string;
@@ -74,22 +79,23 @@
 	}
 
 	const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-	const workDays = $derived(weekDays.slice(0, 5));
+	const workDays = $derived(weekDays.filter(isWorkingDay));
 </script>
 
-<div class="week-calendar">
-	<div class="week-calendar__header">
-		<div class="week-calendar__header-gutter" aria-hidden="true"></div>
-		{#each workDays as dayKey, i (dayKey)}
-			<div class="week-calendar__header-cell" role="columnheader">
-				<span class="week-calendar__weekday">{weekdayLabels[i]}</span>
-				<span class="week-calendar__date">{dayOfMonthFromDateKey(dayKey)}</span>
-			</div>
-		{/each}
-	</div>
+<div class="week-calendar" aria-label="Week schedule, Monday through Friday">
+	<div class="week-calendar__scroll">
+		<div class="week-calendar__header">
+			<div class="week-calendar__header-gutter" aria-hidden="true"></div>
+			{#each workDays as dayKey, i (dayKey)}
+				<div class="week-calendar__header-cell" role="columnheader">
+					<span class="week-calendar__weekday">{weekdayLabels[i]}</span>
+					<span class="week-calendar__date">{dayOfMonthFromDateKey(dayKey)}</span>
+				</div>
+			{/each}
+		</div>
 
-	<div class="week-calendar__body" role="grid">
-		<div class="week-calendar__time-gutter" aria-hidden="true">
+		<div class="week-calendar__body" role="grid">
+			<div class="week-calendar__time-gutter" aria-hidden="true">
 			{#each HOURS as hour}
 				<div
 					class="week-calendar__time-label"
@@ -98,9 +104,9 @@
 					{formatHourLabel(hour)}
 				</div>
 			{/each}
-		</div>
+			</div>
 
-		{#each workDays as dayKey (dayKey)}
+			{#each workDays as dayKey (dayKey)}
 			{@const dayAppointments = appointmentsForDay(dayKey)}
 			<div
 				class="week-calendar__day"
@@ -124,7 +130,8 @@
 					{/each}
 				</ul>
 			</div>
-		{/each}
+			{/each}
+		</div>
 	</div>
 </div>
 
@@ -143,6 +150,7 @@
 
 <style>
 	.week-calendar {
+		--week-calendar-gutter: 48px;
 		border: var(--ghost-border);
 		border-radius: var(--radius-xs);
 		overflow: hidden;
@@ -153,7 +161,7 @@
 
 	.week-calendar__header {
 		display: grid;
-		grid-template-columns: 48px repeat(5, minmax(0, 1fr));
+		grid-template-columns: var(--week-calendar-gutter) repeat(5, minmax(0, 1fr));
 		border-bottom: var(--ghost-border-strong);
 	}
 
@@ -195,7 +203,7 @@
 
 	.week-calendar__time-gutter {
 		flex-shrink: 0;
-		width: 48px;
+		width: var(--week-calendar-gutter);
 		position: relative;
 		border-right: var(--ghost-border);
 	}
@@ -240,22 +248,40 @@
 		list-style: none;
 	}
 
-	@media (max-width: 640px) {
-		.week-calendar__header {
-			grid-template-columns: 1fr;
+	@media (max-width: 768px) {
+		.week-calendar__scroll {
+			width: 100%;
+			overflow-x: visible;
 		}
 
-		.week-calendar__header-gutter {
-			display: none;
+		.week-calendar__header {
+			grid-template-columns: var(--week-calendar-gutter) repeat(5, minmax(0, 1fr));
+			width: 100%;
+			min-width: 0;
 		}
 
 		.week-calendar__body {
-			flex-direction: column;
+			width: 100%;
+			min-width: 0;
+			max-height: none;
+			overflow-y: visible;
+		}
+
+		.week-calendar {
+			--week-calendar-gutter: 2.5rem;
 		}
 
 		.week-calendar__day {
-			border-right: none;
-			border-bottom: var(--ghost-border);
+			flex: 1 1 0;
+			min-width: 0;
+		}
+
+		.week-calendar__header-cell {
+			padding: 0.35rem 0.15rem;
+		}
+
+		.week-calendar__date {
+			font-size: 0.875rem;
 		}
 	}
 </style>

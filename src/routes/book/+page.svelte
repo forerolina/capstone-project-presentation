@@ -9,8 +9,18 @@
 
 	let selectedServiceId = $state('');
 	let selectedSlot = $state<Date | null>(null);
+	let clientName = $state('');
+	let clientEmail = $state('');
 	const fieldErrors = $derived(form?.fieldErrors ?? {});
-	const canSubmit = $derived(Boolean(selectedSlot && selectedServiceId && data.services.length > 0));
+	const canSubmit = $derived(
+		Boolean(
+			data.services.length > 0 &&
+				clientName.trim() &&
+				clientEmail.trim() &&
+				selectedServiceId &&
+				selectedSlot
+		)
+	);
 </script>
 
 <div class="book-page">
@@ -41,6 +51,8 @@
 						{fieldErrors}
 						bind:selectedServiceId
 						bind:selectedSlot
+						bind:clientName
+						bind:clientEmail
 					/>
 
 					<footer class="book-form__footer">
@@ -67,7 +79,24 @@
 		z-index: 1;
 	}
 
+	.book-page :global(.ui-page-header__main) {
+		flex-wrap: nowrap;
+		align-items: flex-start;
+	}
+
+	.book-page :global(.ui-page-header__text) {
+		min-width: 0;
+	}
+
+	.book-page :global(.ui-page-header__actions) {
+		flex-shrink: 0;
+		margin-left: auto;
+	}
+
 	.book-page :global(.ui-page-header h1) {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 		color: #ffffff;
 	}
 
@@ -86,10 +115,6 @@
 		display: flex;
 		flex-direction: column;
 		max-height: none;
-	}
-
-	:global(.book-form .booking-panel) {
-		min-height: min(420px, 70vh);
 	}
 
 	.book-form__footer {

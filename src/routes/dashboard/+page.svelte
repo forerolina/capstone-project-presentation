@@ -28,26 +28,32 @@
 		{/snippet}
 
 		{#snippet actions()}
-			<div class="dashboard-header-actions">
-				<Button variant="secondary" href={resolve('/dashboard/services')}>Services</Button>
-				<form method="post" action="?/signOut" use:enhance class="dashboard-sign-out">
-					<Button variant="secondary" type="submit">Sign out</Button>
-				</form>
-			</div>
+			<form method="post" action="?/signOut" use:enhance class="dashboard-sign-out">
+				<Button variant="secondary" type="submit" class="dashboard-header-sign-out"
+					>Sign out</Button
+				>
+			</form>
 		{/snippet}
 
 		<div class="dashboard-toolbar">
-			<div class="dashboard-toolbar__intro">
-				<p class="dashboard-toolbar__tagline text-muted">Manage upcoming bookings</p>
-				<nav class="breadcrumb dashboard-toolbar__breadcrumb" aria-label="Breadcrumb">
-					<ol>
-						<li><a href={resolve('/book')}>Book</a></li>
-						<li><span aria-current="page">Dashboard</span></li>
-					</ol>
-				</nav>
+			<div class="dashboard-toolbar__meta">
+				<div class="dashboard-toolbar__intro">
+					<p class="dashboard-toolbar__tagline text-muted">Manage upcoming bookings</p>
+					<nav class="breadcrumb dashboard-toolbar__breadcrumb" aria-label="Breadcrumb">
+						<ol>
+							<li><a href={resolve('/book')}>Book</a></li>
+							<li><span aria-current="page">Dashboard</span></li>
+						</ol>
+					</nav>
+				</div>
+				<Button
+					variant="secondary"
+					href={resolve('/dashboard/services')}
+					class="dashboard-header-services">Services</Button
+				>
 			</div>
 
-			<div class="dashboard-toolbar__actions">
+			<div class="dashboard-toolbar__week">
 				<nav class="dashboard-week-nav" aria-label="Week navigation">
 					<Button
 						variant="tertiary"
@@ -105,17 +111,28 @@
 
 <style>
 	:global(.page--wide .ui-page-header__main) {
-		align-items: center;
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.5rem 1rem;
 	}
 
-	.dashboard-header-actions {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
+	:global(.page--wide .ui-page-header__text) {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	:global(.page--wide .ui-page-header__actions) {
+		flex: 0 0 auto;
+		margin-left: auto;
 	}
 
 	.dashboard-sign-out {
 		margin: 0;
+	}
+
+	:global(.dashboard-header-sign-out) {
+		white-space: nowrap;
 	}
 
 	.dashboard-week-nav {
@@ -131,11 +148,17 @@
 
 	.dashboard-toolbar {
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1.5rem;
+		flex-direction: column;
+		gap: 0.75rem;
 		width: 100%;
 		margin-top: 0.5rem;
+	}
+
+	.dashboard-toolbar__meta {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
 	}
 
 	.dashboard-toolbar__intro {
@@ -143,6 +166,11 @@
 		flex-direction: column;
 		gap: 0.25rem;
 		min-width: 0;
+	}
+
+	:global(.dashboard-header-services) {
+		flex-shrink: 0;
+		white-space: nowrap;
 	}
 
 	.dashboard-toolbar__tagline {
@@ -155,11 +183,12 @@
 		margin: 0;
 	}
 
-	.dashboard-toolbar__actions {
+	.dashboard-toolbar__week {
 		display: flex;
 		align-items: center;
+		justify-content: flex-end;
+		flex-wrap: wrap;
 		gap: 1rem 1.5rem;
-		flex-shrink: 0;
 	}
 
 	:global(.dashboard-week-today--current) {
@@ -168,13 +197,11 @@
 	}
 
 	@media (max-width: 48rem) {
-		.dashboard-toolbar {
-			flex-direction: column;
-			align-items: stretch;
+		.dashboard-toolbar__meta {
+			align-items: flex-start;
 		}
 
-		.dashboard-toolbar__actions {
-			flex-wrap: wrap;
+		.dashboard-toolbar__week {
 			justify-content: flex-end;
 		}
 	}

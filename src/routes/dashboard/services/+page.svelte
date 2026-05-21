@@ -325,22 +325,26 @@
 
 	.services-list__main {
 		display: flex;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		align-items: baseline;
 		gap: 0.25rem 0.75rem;
 		min-width: 0;
+		overflow: hidden;
 	}
 
 	.services-list__name {
 		margin: 0;
 		min-width: 0;
-		overflow-wrap: anywhere;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.services-list__duration {
 		margin: 0;
 		font-size: var(--text-body-md-size);
 		white-space: nowrap;
+		flex-shrink: 0;
 	}
 
 	.services-list__sep {
@@ -350,10 +354,11 @@
 
 	.services-list__actions {
 		display: flex;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		align-items: center;
 		justify-content: flex-end;
 		gap: 0.5rem;
+		flex-shrink: 0;
 	}
 
 	.services-list__actions form {
@@ -362,16 +367,5 @@
 
 	.services-empty {
 		margin: 0 0 1rem;
-	}
-
-	@media (max-width: 36rem) {
-		.services-list__row {
-			grid-template-columns: 1fr;
-			gap: 0.75rem;
-		}
-
-		.services-list__actions {
-			justify-content: flex-start;
-		}
 	}
 </style>

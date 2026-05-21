@@ -73,4 +73,10 @@
 		opacity: 1;
 		transform: translateX(-50%) translateY(0);
 	}
+
+	@media (max-width: 48rem) {
+		.ui-header-add__label {
+			display: none;
+		}
+	}
 </style>

@@ -38,17 +38,18 @@
 	@media (max-width: 768px) {
 		.booking-panel {
 			grid-template-columns: 1fr;
+			overflow: visible;
 		}
 
 		:global(.booking-panel__col) {
 			border-right: none;
 			border-bottom: var(--ghost-border);
-			max-height: 240px;
+			overflow-y: visible;
+			min-height: auto;
 		}
 
 		:global(.booking-panel__col:last-child) {
 			border-bottom: none;
-			max-height: none;
 		}
 	}
 </style>

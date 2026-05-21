@@ -28,7 +28,9 @@
 		businessTimezone,
 		fieldErrors = {},
 		selectedServiceId = $bindable(''),
-		selectedSlot = $bindable(null)
+		selectedSlot = $bindable(null),
+		clientName = $bindable(''),
+		clientEmail = $bindable('')
 	}: {
 		idPrefix: string;
 		upcomingAppointments: AppointmentRow[];
@@ -37,6 +39,8 @@
 		fieldErrors?: BookingFieldErrors;
 		selectedServiceId?: string;
 		selectedSlot?: Date | null;
+		clientName?: string;
+		clientEmail?: string;
 	} = $props();
 
 	const initialDayKey = nextWorkingDayKey(todayKeyInZone(businessTimezone));
@@ -56,14 +60,12 @@
 	);
 	const monthGridDayKeys = $derived(getMonthGridDayKeys(viewMonthKey));
 	const availableSlots = $derived(
-		selectedService
-			? getAvailableSlots(
-					selectedDateKey,
-					upcomingAppointments,
-					businessTimezone,
-					slotDurationMinutes
-				)
-			: []
+		getAvailableSlots(
+			selectedDateKey,
+			upcomingAppointments,
+			businessTimezone,
+			slotDurationMinutes
+		)
 	);
 
 	const selectedDayLabel = $derived(
@@ -96,6 +98,7 @@
 			required
 			autocomplete="name"
 			error={fieldErrors.clientName}
+			bind:value={clientName}
 		/>
 
 		<Field
@@ -106,6 +109,7 @@
 			required
 			autocomplete="email"
 			error={fieldErrors.clientEmail}
+			bind:value={clientEmail}
 		/>
 
 		<Field

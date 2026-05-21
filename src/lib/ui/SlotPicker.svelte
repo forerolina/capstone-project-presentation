@@ -122,4 +122,26 @@
 		font-size: var(--text-label-md-size);
 		color: var(--color-on-error-container);
 	}
+
+	@media (max-width: 768px) {
+		.slot-picker__list {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 0.375rem;
+		}
+
+		.slot-picker__empty {
+			grid-column: 1 / -1;
+		}
+
+		.slot-picker__btn {
+			padding: 0.375rem 0.25rem;
+			font-size: 0.75rem;
+			line-height: 1;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			min-height: 2.75rem;
+		}
+	}
 </style>

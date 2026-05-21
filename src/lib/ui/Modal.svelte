@@ -119,4 +119,10 @@
 		border-top: var(--ghost-border);
 		background: var(--color-surface-container-low);
 	}
+
+	@media (max-width: 768px) {
+		.ui-modal__body {
+			overflow-y: auto;
+		}
+	}
 </style>
