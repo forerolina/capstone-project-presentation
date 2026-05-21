@@ -5,10 +5,14 @@ import { getBusinessTimezone } from '$lib/server/calendar/timezone';
 import { db } from '$lib/server/db';
 import { appointment } from '$lib/server/db/schema';
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
 	const id = url.searchParams.get('id');
 	if (!id) {
-		return { appointment: null, businessTimezone: getBusinessTimezone() };
+		return {
+			appointment: null,
+			businessTimezone: getBusinessTimezone(),
+			isOwner: Boolean(locals.user)
+		};
 	}
 
 	const [row] = await db.select().from(appointment).where(eq(appointment.id, id)).limit(1);
@@ -16,5 +20,9 @@ export const load: PageServerLoad = async ({ url }) => {
 		error(404, 'Booking not found');
 	}
 
-	return { appointment: row, businessTimezone: getBusinessTimezone() };
+	return {
+		appointment: row,
+		businessTimezone: getBusinessTimezone(),
+		isOwner: Boolean(locals.user)
+	};
 };

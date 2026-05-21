@@ -23,89 +23,47 @@
 	);
 </script>
 
-<div class="book-page">
-	<main class="page page--wide book-page__main">
-		<PageHeader title="Book an appointment" borderless>
-			{#snippet actions()}
-				{#if data.isOwner}
-					<Button variant="secondary" href={resolve('/dashboard')}>Dashboard</Button>
-				{:else}
-					<Button variant="secondary" href={resolve('/login')}>admin login</Button>
-				{/if}
-			{/snippet}
-			<p class="book-tagline">Choose a service and time. No account needed — you'll get a confirmation by email.</p>
-		</PageHeader>
-
-		{#if data.services.length === 0}
-			<Card>
-				<p class="book-empty text-muted">Online booking is not available yet. Please contact the business.</p>
-			</Card>
+<PageHeader title="Book an appointment" borderless>
+	{#snippet actions()}
+		{#if data.isOwner}
+			<Button variant="secondary" href={resolve('/dashboard')}>Dashboard</Button>
 		{:else}
-			<form method="post" class="book-form" use:enhance>
-				<Card>
-					<AppointmentBookingFields
-						idPrefix="book"
-						upcomingAppointments={data.upcomingAppointments}
-						services={data.services}
-						businessTimezone={data.businessTimezone}
-						{fieldErrors}
-						bind:selectedServiceId
-						bind:selectedSlot
-						bind:clientName
-						bind:clientEmail
-					/>
-
-					<footer class="book-form__footer">
-						{#if form?.message}
-							<p class="ui-form-message" role="alert">{form.message}</p>
-						{/if}
-						<Button variant="primary" type="submit" disabled={!canSubmit}>Book appointment</Button>
-					</footer>
-				</Card>
-			</form>
+			<Button variant="secondary" href={resolve('/login')}>admin login</Button>
 		{/if}
-	</main>
-</div>
+	{/snippet}
+	<p class="book-tagline">Choose a service and time. No account needed — you'll get a confirmation by email.</p>
+</PageHeader>
+
+{#if data.services.length === 0}
+	<Card>
+		<p class="book-empty text-muted">Online booking is not available yet. Please contact the business.</p>
+	</Card>
+{:else}
+	<form method="post" class="book-form" use:enhance>
+		<Card>
+			<AppointmentBookingFields
+				idPrefix="book"
+				upcomingAppointments={data.upcomingAppointments}
+				services={data.services}
+				businessTimezone={data.businessTimezone}
+				{fieldErrors}
+				bind:selectedServiceId
+				bind:selectedSlot
+				bind:clientName
+				bind:clientEmail
+			/>
+
+			<footer class="book-form__footer">
+				{#if form?.message}
+					<p class="ui-form-message" role="alert">{form.message}</p>
+				{/if}
+				<Button variant="primary" type="submit" disabled={!canSubmit}>Book appointment</Button>
+			</footer>
+		</Card>
+	</form>
+{/if}
 
 <style>
-	.book-page {
-		position: relative;
-		z-index: 1;
-		min-height: 100vh;
-	}
-
-	.book-page__main {
-		position: relative;
-		z-index: 1;
-	}
-
-	.book-page :global(.ui-page-header__main) {
-		flex-wrap: nowrap;
-		align-items: flex-start;
-	}
-
-	.book-page :global(.ui-page-header__text) {
-		min-width: 0;
-	}
-
-	.book-page :global(.ui-page-header__actions) {
-		flex-shrink: 0;
-		margin-left: auto;
-	}
-
-	.book-page :global(.ui-page-header h1) {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		color: #ffffff;
-	}
-
-	.book-page :global(.book-tagline) {
-		margin: 0;
-		font-size: var(--text-body-md-size);
-		color: rgba(255, 255, 255, 0.7);
-	}
-
 	.book-form {
 		max-width: min(960px, 100%);
 		margin: 0 auto;

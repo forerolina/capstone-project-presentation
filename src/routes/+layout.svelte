@@ -7,7 +7,9 @@
 
 	let { children } = $props();
 
-	const isBookPage = $derived(page.url.pathname === '/book');
+	const isBookPage = $derived(
+		page.url.pathname === '/book' || page.url.pathname.startsWith('/book/')
+	);
 </script>
 
 <svelte:head>
