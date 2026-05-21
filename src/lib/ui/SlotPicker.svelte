@@ -96,6 +96,14 @@
 		overflow-y: auto;
 	}
 
+	@media (max-width: 768px) {
+		.slot-picker__periods {
+			min-height: 0;
+			max-height: none;
+			overflow-y: visible;
+		}
+	}
+
 	.slot-picker__period-title {
 		margin: 0 0 0.5rem;
 		font-size: var(--text-label-md-size);
