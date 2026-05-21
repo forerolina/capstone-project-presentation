@@ -108,25 +108,25 @@
 		margin: 0;
 		padding: 0;
 		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-columns: repeat(2, minmax(4.75rem, 1fr));
 		gap: 0.375rem;
 	}
 
 	@container (min-width: 240px) {
 		.slot-picker__list {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-columns: repeat(3, minmax(4.75rem, 1fr));
 		}
 	}
 
 	@container (min-width: 320px) {
 		.slot-picker__list {
-			grid-template-columns: repeat(4, minmax(0, 1fr));
+			grid-template-columns: repeat(4, minmax(4.75rem, 1fr));
 		}
 	}
 
 	@container (min-width: 400px) {
 		.slot-picker__list {
-			grid-template-columns: repeat(5, minmax(0, 1fr));
+			grid-template-columns: repeat(5, minmax(4.75rem, 1fr));
 		}
 	}
 
@@ -147,7 +147,7 @@
 		font: inherit;
 		font-size: 0.75rem;
 		line-height: 1.2;
-		white-space: normal;
+		white-space: nowrap;
 		min-height: 2.75rem;
 		cursor: pointer;
 		text-align: center;
