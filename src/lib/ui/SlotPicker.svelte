@@ -138,17 +138,19 @@
 	.slot-picker__btn {
 		display: block;
 		width: 100%;
-		padding: 0.375rem 0.25rem;
+		box-sizing: border-box;
+		padding: 0.375rem 0.5rem;
 		border: var(--ghost-border);
 		border-radius: var(--radius-full);
 		background: var(--glass-bg);
 		backdrop-filter: blur(var(--glass-blur-sm));
 		color: var(--color-primary);
 		font: inherit;
-		font-size: 0.75rem;
-		line-height: 1.2;
-		white-space: nowrap;
-		min-height: 2.75rem;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		line-height: 1.15;
+		white-space: normal;
+		min-height: 2.5rem;
 		cursor: pointer;
 		text-align: center;
 		transition:
@@ -192,10 +194,11 @@
 		color: var(--color-on-error-container);
 	}
 
-	@container (min-width: 320px) {
+	@container (min-width: 400px) {
 		.slot-picker__btn {
-			font-size: var(--text-body-md-size);
-			padding: 0.5rem 0.375rem;
+			font-size: var(--text-label-md-size);
+			line-height: 1.2;
+			padding: 0.4375rem 0.5rem;
 		}
 	}
 </style>
