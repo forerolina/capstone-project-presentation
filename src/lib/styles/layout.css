@@ -90,8 +90,8 @@
 	background: transparent;
 }
 
-:global(html:has(.app-shell--book)),
-:global(body:has(.app-shell--book)) {
+html:has(.app-shell--book),
+body:has(.app-shell--book) {
 	background-color: #000000;
 	color-scheme: dark;
 }
